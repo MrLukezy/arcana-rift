@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#171226">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>星界盟约 · 店长</title>
+<link rel="icon" href="../img/favicon.png">
+<link rel="stylesheet" href="m.css">
+</head>
+<body>
+
+<!-- 顶部资源条 -->
+<header class="topbar" id="topbar">
+  <div class="who">
+    <div class="avatar" id="avatar">店</div>
+    <div class="who-txt">
+      <b id="playerName">收藏学徒</b>
+      <div class="xp"><i id="xpBar"></i></div>
+    </div>
+    <span class="lv" id="lv">Lv1</span>
+  </div>
+  <div class="res">
+    <span class="coin"><i>◉</i><b id="coins">200</b></span>
+    <span class="gem"><i>◆</i><b id="gems">60</b></span>
+    <span class="ticket"><i>✦</i><b id="tickets">3</b></span>
+  </div>
+</header>
+
+<main id="view" class="view"></main>
+
+<!-- 底部导航 -->
+<nav class="tabbar">
+  <button class="tab" data-tab="home"><span>🏠</span>主页</button>
+  <button class="tab" data-tab="bag"><span>🎒</span>背包</button>
+  <button class="tab tab-pack" data-tab="pack"><span>🎁</span>开包</button>
+  <button class="tab" data-tab="fight"><span>⚔️</span>对战</button>
+  <button class="tab" data-tab="trade"><span>💱</span>交易</button>
+</nav>
+
+<!-- 通用弹层 -->
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-card" id="sheetCard"></div>
+</div>
+
+<!-- 飘字 -->
+<div class="toasts" id="toasts"></div>
+
+<script type="module" src="m.js"></script>
+</body>
+</html>
