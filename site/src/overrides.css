@@ -461,48 +461,64 @@ body:has(.pack.tearing) .rune-halo { opacity: 0.55; }
   inset: 0;
   z-index: 4;
   pointer-events: none;
-  transform: rotate(calc(-1 * var(--rz, 0deg)));
+  /* 只抵消 55% 的旋转：既保住可读性，又让文字明显“贴在卡上” */
+  transform: rotate(calc(var(--rz, 0deg) * -0.4)) translateZ(16px);
   transform-origin: 50% 92%;
+  transform-style: preserve-3d;
 }
 
 .card-face .ca-plate-text {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
-  padding: 0 6% 5.5%;
+  bottom: 3.4%;
+  height: 15.4%;
+  padding: 0 6%;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.18em;
+  justify-content: center;
+  gap: 0.55cqw;
 }
 
 .card-face .ca-plate-text .ca-name {
   font-family: var(--font-display, serif);
-  font-size: clamp(11px, 4.2cqw, 26px);
+  font-size: clamp(13px, 6.8cqw, 36px);
   font-weight: 700;
-  letter-spacing: 0.04em;
-  color: #fff;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85), 0 0 2px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.06em;
   line-height: 1.1;
+  /* 烫金凸起：白字面 + 1px 金色下缘 + 深投影，小字号也立得住 */
+  color: #fffdf7;
+  text-shadow:
+    0 1px 0 #c99a45,
+    0 2px 0 rgba(104, 68, 14, 0.55),
+    0 3px 4px rgba(0, 0, 0, 0.55),
+    0 8px 16px rgba(0, 0, 0, 0.7),
+    0 0 16px rgba(255, 206, 122, 0.22);
 }
 
 .card-face .ca-plate-text .ca-sub {
-  font-size: clamp(7px, 2.4cqw, 14px);
-  letter-spacing: 0.05em;
-  color: rgba(224, 230, 244, 0.82);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+  font-size: clamp(8px, 2.9cqw, 16px);
+  letter-spacing: 0.07em;
+  color: rgba(238, 242, 252, 0.95);
+  text-shadow:
+    0 1px 0 rgba(120, 88, 34, 0.55),
+    0 2px 2px rgba(0, 0, 0, 0.7),
+    0 5px 10px rgba(0, 0, 0, 0.65);
 }
 
 .card-face .ca-text .ca-serial {
   position: absolute;
   top: 2.6%;
   right: 6%;
-  font-size: clamp(6px, 2.1cqw, 12px);
-  color: rgba(214, 220, 236, 0.72);
-  letter-spacing: 0.04em;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+  font-size: clamp(6px, 2.2cqw, 13px);
+  color: rgba(240, 232, 208, 0.92);
+  letter-spacing: 0.08em;
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.85),
+    0 2px 3px rgba(0, 0, 0, 0.75),
+    0 0 10px rgba(0, 0, 0, 0.6);
 }
 
 /* ══════════ 悬停序列帧动画（只对配置了 anim 的卡生效） ══════════ */
