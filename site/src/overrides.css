@@ -448,3 +448,47 @@
   letter-spacing: 0.04em;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
 }
+
+/* ══════════ 悬停序列帧动画（只对配置了 anim 的卡生效） ══════════ */
+.card-face .ca-anim {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+
+.card-face .ca-anim img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 400%;
+  height: 100%;
+  max-width: none;
+  object-fit: fill;
+  transform: translate3d(0, 0, 0);
+}
+
+/* 停在第一帧时静止；播放时按 steps 推进 4 帧 */
+.card.is-playing .ca-anim {
+  opacity: 1;
+}
+
+.card.is-playing .ca-anim img {
+  animation: caAnimPlay 1.4s steps(4, jump-none) infinite;
+}
+
+.card.is-playing .ca-ch {
+  opacity: 0;
+}
+
+@keyframes caAnimPlay {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-75%, 0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card.is-playing .ca-anim img { animation: none; }
+}

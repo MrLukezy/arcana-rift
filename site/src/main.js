@@ -1209,6 +1209,9 @@ function buildCardMarkup(cardDef, { foilVariant = null, showNew = false } = {}) 
         `<img class="card-full-art ca-bg" src="${cardDef.artBg}" alt="" aria-hidden="true" decoding="async">` +
         `<i class="foil-holo"></i><i class="foil-glare"></i>` +
         `<img class="ca-ch" src="${cardDef.artChar}" alt="${cardDef.name}" decoding="async">` +
+        (cardDef.anim
+          ? `<i class="ca-anim"><img src="${cardDef.anim}" alt="" aria-hidden="true" decoding="async"></i>`
+          : '') +
         `<img class="ca-plate-img" src="${cardDef.artPlate}" alt="" aria-hidden="true" decoding="async">` +
         `<div class="ca-text">` +
         `<span class="ca-serial">NO. ${cardDef.serial}</span>` +
@@ -2451,6 +2454,14 @@ function tick(nowMs) {
         c.touchHoldUntil = clockSec + (pointer.isTouch ? 1.1 : 0);
       }
       const active = isZoomed || c === hoveredTarget || clockSec < c.touchHoldUntil || c.kbFocused;
+      if (active !== c.hovered) {
+        c.el.classList.toggle('is-playing', active && Boolean(c.def.anim));
+        if (active && c.def.anim) {
+          // 首次悬停时预热整条雪碧图，避免播放瞬间空白
+          const im = new Image();
+          im.src = c.def.anim;
+        }
+      }
       c.hovered = active;
 
       if (c.kbFocused && c !== hoveredTarget) {

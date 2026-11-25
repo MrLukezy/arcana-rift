@@ -59,3 +59,31 @@ cd site && python3 -m http.server 8000
 - 本项目代码：MIT
 - 开包台交互移植自 [SimpleMkt PRISM](https://github.com/Lone3m-tech/prism-holo-pack)（MIT），见 `NOTICE.md`
 - 美术素材全部由本项目生成
+
+## 悬停序列帧动画（实验）
+
+拿两张卡做了原型：**月影狼德鲁伊（001）** 与 **神谕之钥（P23）**。
+
+鼠标悬停到卡片上时，静止的角色层淡出，换成 4 帧序列帧循环播放（上浮 / 飘动 / 光晕呼吸）。
+
+### 怎么生成的
+
+1. `pipeline/gen_anim.py` 走 hfsy 的**「参考图 + 文本」**出图，逐帧描述动作差异
+   - 网关**不支持 base64 参考图**，只吃公网 URL，所以参考图放在 `site/anim/ref/`
+   - 每帧约 120–340 秒，6 帧共约 12 分钟（3 并发）
+2. `pipeline/process_anim.py` 把 4 帧（原图 + 3 张生成帧）对齐成一张 4320×1512 的雪碧图：
+   - 绿幕抠像 → 取 alpha 包围盒 → 按高度缩放到基准 → 中心对齐
+   - 每帧再叠一点垂直位移（0 / -20 / -32 / +10 px）保证上浮感和循环闭合
+   - 最后按 82% 放大到 1080×1512 画布，和静态 `-ch` 完全同一套坐标
+3. 前端用 `<i class="ca-anim"><img></i>` 叠在角色层上：
+
+```css
+.ca-anim img { width: 400%; height: 100%; }
+.card.is-playing .ca-anim img {
+  animation: caAnimPlay 1.4s steps(4, jump-none) infinite;
+}
+@keyframes caAnimPlay { to { transform: translate3d(-75%, 0, 0); } }
+```
+
+`steps(4, jump-none)` 是关键：普通的 `steps(4)` 只会停在 0/25/50/75% 的进度上，
+最后一帧永远到不了，而且中间会出现半帧错位。
