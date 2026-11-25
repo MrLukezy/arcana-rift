@@ -1,0 +1,10 @@
+# 生成中间产物（体积大，跑 pipeline 可重新生成）
+pipeline/__pycache__/
+*.pyc
+*.part
+probe/
+venv/
+.venv/
+
+# 原始出图（几百 MB）：需要时用 gen_art.py / gen_items.py 重新生成
+raw/

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Arcana Rift · 撕卡抽卡图鉴 · 100 位兽娘</title>
+<meta name="description" content="100 位兽娘 RPG 角色，五档稀有度，必须先撕开卡封才能抽中。卡面为背景 / 角色 / 近景粒子 / 卡框四层分离，指针倾斜有真实视差纵深；SR 以上才有镭射，N / R 是无镭射普通卡。" />
+<meta name="theme-color" content="#05060a" />
+<meta property="og:title" content="Arcana Rift · 撕卡抽卡图鉴" />
+<meta property="og:description" content="先撕卡，再抽卡。100 位兽娘全息收藏卡。" />
+<meta property="og:type" content="website" />
+<link rel="stylesheet" href="assets/app.css?v=7" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff6ec7'/%3E%3Cstop offset='.5' stop-color='%23ffe066'/%3E%3Cstop offset='1' stop-color='%236ee7ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='9' fill='url(%23g)'/%3E%3C/svg%3E" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="#top"><span class="mark"></span>Arcana Rift<small>撕卡抽卡图鉴</small></a>
+    <nav class="links">
+      <a href="./">开包台</a>
+      <a href="index.html">开包台</a>
+      <a href="#deck">图鉴</a>
+      <a class="btn" href="./">← 回开包台</a>
+      <button class="btn ghost" id="mute" type="button" title="音效开关">🔊</button>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ══════ 图鉴 ══════ -->
+  <section id="deck">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="k">Collection</div>
+        <h2>100 张卡 · 图鉴</h2>
+        <p>
+          抽到才会解锁。点任意一张看大图（可拖动倾斜，看四层视差）。
+          当前筛选 <b id="deckCount">100</b> 张。
+        </p>
+      </div>
+
+      <div class="filters">
+        <button class="chip on" data-f="all" type="button">全部</button>
+        <button class="chip" data-f="unowned" type="button">未获得</button>
+        <button class="chip" data-f="owned" type="button">已获得</button>
+        <span class="spacer"></span>
+        <button class="chip" data-f="UR" data-r="UR" type="button">UR</button>
+        <button class="chip" data-f="SSR" data-r="SSR" type="button">SSR</button>
+        <button class="chip" data-f="SR" data-r="SR" type="button">SR</button>
+        <button class="chip" data-f="R" data-r="R" type="button">R</button>
+        <button class="chip" data-f="N" data-r="N" type="button">N</button>
+      </div>
+
+      <div class="deck" id="deckGrid"></div>
+    </div>
+  </section>
+
+  <!-- ══════ 玩法与工艺 ══════ -->
+  <section id="how">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="k">How it works</div>
+        <h2>撕卡机制 · 稀有度 · 卡面工艺</h2>
+        <p>撕卡演出与抽卡引擎来自本机已有的 simplemkt-gacha 项目，卡面来自这轮重新生成的分层素材。</p>
+      </div>
+
+      <div class="panels">
+        <div class="panel">
+          <h3>① 撕卡才算抽中</h3>
+          <p>抽卡只是把「卡封」发到台上。卡封是真实可撕的：按住左右拖动，撕裂进度跟手，超过 42% 才会彻底撕开。</p>
+          <p>撕开后卡片才现身：普通卡（N/R）就在原地亮相，SR / SSR / UR 会依次加码——紫环脉冲、金色光柱与冲击波、彩虹全息爆破 + 震屏。</p>
+        </div>
+
+        <div class="panel">
+          <h3>② 五档稀有度</h3>
+          <div class="rt"><span class="dot" style="background:#9aa3b2"></span>N 普通 · 无镭射</div>
+          <div class="rt"><span class="dot" style="background:#4c9df0"></span>R 稀有 · 无镭射</div>
+          <div class="rt"><span class="dot" style="background:#a78bfa"></span>SR 史诗 · 紫框 + 镭射</div>
+          <div class="rt"><span class="dot" style="background:#f6c344"></span>SSR 传说 · 金框 + 强镭射 + 角饰</div>
+          <div class="rt"><span class="dot" style="background:linear-gradient(120deg,#ff6ec7,#ffe066,#6ee7ff)"></span>UR 神话 · 彩虹流动边框</div>
+          <table>
+            <thead><tr><th>档位</th><th>单抽概率</th><th>卡池数量</th></tr></thead>
+            <tbody>
+              <tr><td>UR</td><td class="n">0.60%</td><td class="n">3</td></tr>
+              <tr><td>SSR</td><td class="n">5.40%</td><td class="n">8</td></tr>
+              <tr><td>SR</td><td class="n">14.00%</td><td class="n">19</td></tr>
+              <tr><td>R</td><td class="n">30.00%</td><td class="n">30</td></tr>
+              <tr><td>N</td><td class="n">50.00%</td><td class="n">40</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:8px">第 70 抽起 UR 权重递增，第 90 抽硬保底；十连保底至少一张 SR。</p>
+        </div>
+
+        <div class="panel">
+          <h3>③ 卡面四层纵深</h3>
+          <p>每个角色不是一张平面图，而是分开的四层素材，倾斜时按不同 Z 轴位移，产生真实视差：</p>
+          <table>
+            <thead><tr><th>层</th><th>内容</th><th>视差</th></tr></thead>
+            <tbody>
+              <tr><td>远景</td><td>程序化元素背景</td><td>0</td></tr>
+              <tr><td>主体</td><td>绿幕抠像角色</td><td>30px</td></tr>
+              <tr><td>近景</td><td>光斑粒子</td><td>52px</td></tr>
+              <tr><td>卡框</td><td>稀有度边框 + 铭牌</td><td>66–76px</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:8px">镭射叠层单独一层（color-dodge + conic 渐变），N / R 直接关闭，就是普通卡。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ══════ 详情弹层 ══════ -->
+<div class="modal" id="modal">
+  <div class="box">
+    <button class="close" type="button" aria-label="关闭">✕</button>
+    <div class="stagebar"></div>
+    <div class="modal-body"></div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div>Arcana Rift · 撕卡抽卡图鉴 · 100 位兽娘，素材由 gpt-image-2.5 生成，卡面分层由本地流水线合成</div>
+    <div><a href="https://arcana.lukezystudio.cn/" target="_blank" rel="noopener">20 卡版展示站</a> · <a href="https://holo.lukezystudio.cn/" target="_blank" rel="noopener">holo-card-3d</a></div>
+  </div>
+</footer>
+
+<script src="assets/data.js?v=7"></script>
+<script src="assets/card.js?v=7"></script>
+<script src="assets/app.js?v=7"></script>
+</body>
+</html>

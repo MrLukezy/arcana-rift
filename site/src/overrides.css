@@ -1,0 +1,450 @@
+/* Arcana Rift · 对 PRISM 开包台的本地适配（100 张卡 / 图鉴册 20 行） */
+
+/* 图鉴册：100 张卡时让行高按卡片比例撑开，靠滚动而不是压缩 */
+.binder-grid {
+  grid-auto-rows: max-content;
+  align-content: start;
+}
+
+/* 卡面本身已经是全幅图，隐藏兜底的空窗格与纯色铭牌 */
+.card-slot .art-window { display: none; }
+
+/* 全幅卡：让图片稍微上移，避开底部铭牌区域 */
+.card-full-art { object-position: 50% 42%; }
+
+/* 全幅卡也保留一圈稀有度描边，和 N/R/SR/SSR/UR 五档对应 */
+.card-face { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.06); }
+
+/* 移动端：图鉴册两列时行高同样撑开 */
+@media (max-width: 720px) {
+  .binder-grid { grid-auto-rows: max-content; }
+}
+
+/* ══════════ 拆层卡面：角色随卡倾斜做纵深视差 ══════════ */
+.card-face {
+  --px: 50;
+  --py: 50;
+  --hyp: 0;
+}
+
+.ca-bg,
+.ca-ch {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* 背景层：位移最小，等于「远」 */
+.ca-bg {
+  transform: translate3d(calc((var(--px) - 50) * 0.07px), calc((var(--py) - 50) * 0.07px), 0) scale(1.07);
+}
+
+/* 角色层：位移最大 + 独立浮空，等于「浮在卡面上」 */
+.ca-ch {
+  transform: translate3d(calc((var(--px) - 50) * 0.30px), calc((var(--py) - 50) * 0.30px), 0) scale(1.035);
+}
+
+.card.settled .ca-ch,
+.card.revealed .ca-ch {
+  animation: caFloat 7.5s ease-in-out infinite;
+}
+
+@keyframes caFloat {
+  0%,
+  100% { translate: 0 0; }
+  50% { translate: 0 -7px; }
+}
+
+/* 铭牌层：位移最大，等于「贴在玻璃前面」 */
+.ca-plate {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 7% 8% 6.5%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18em;
+  transform: translate3d(calc((var(--px) - 50) * 0.30px), calc((var(--py) - 50) * 0.30px), 0);
+  background: linear-gradient(180deg, rgba(6, 7, 12, 0) 0%, rgba(6, 7, 12, 0.42) 42%, rgba(6, 7, 12, 0.86) 100%);
+  pointer-events: none;
+}
+
+.ca-plate::before {
+  content: "";
+  position: absolute;
+  left: 9%;
+  right: 9%;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--card-edge-color, #f6d365), transparent);
+  opacity: 0.75;
+}
+
+.ca-name {
+  font-family: "Songti SC", "Noto Serif CJK SC", serif;
+  font-size: 1.1em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+  line-height: 1.15;
+}
+
+.ca-sub {
+  font-size: 0.68em;
+  letter-spacing: 0.06em;
+  color: rgba(226, 232, 246, 0.82);
+  line-height: 1.2;
+}
+
+.ca-serial {
+  font-size: 0.58em;
+  letter-spacing: 0.1em;
+  color: rgba(200, 208, 226, 0.6);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 角色悬停：再抬起一点，强化立体感 */
+.card:hover .ca-ch,
+.card.is-hovered .ca-ch {
+  /* 不用 filter（3D 子树里会闪），改用位移强化浮起 */
+  transform: translate3d(calc((var(--px) - 50) * 0.30px), calc((var(--py) - 50) * 0.30px - 4px), 0) scale(1.045);
+}
+
+/* ══════════ 图鉴册：角色 / 道具 分栏 + 分档统计 ══════════ */
+.binder-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0 4px;
+}
+
+.binder-tab {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(246, 211, 101, 0.28);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(240, 230, 204, 0.72);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.binder-tab:hover { border-color: rgba(246, 211, 101, 0.55); color: #ffe9a8; }
+
+.binder-tab.is-active {
+  background: linear-gradient(180deg, rgba(246, 211, 101, 0.9), rgba(214, 160, 60, 0.86));
+  border-color: rgba(255, 236, 180, 0.9);
+  color: #241a05;
+  font-weight: 700;
+  box-shadow: 0 4px 14px -6px rgba(246, 211, 101, 0.8);
+}
+
+.binder-rarity {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 0;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.rar-chip {
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid currentColor;
+  opacity: 0.85;
+  font-variant-numeric: tabular-nums;
+}
+
+.rar-chip b { font-weight: 700; margin-right: 3px; }
+.rar-secret { color: #ff9fe0; }
+.rar-ultra  { color: #ffd98a; }
+.rar-holo   { color: #c9b3ff; }
+.rar-rare   { color: #8fb8ff; }
+.rar-common { color: #c3c9d6; }
+
+/* 道具卡：物件更靠上，铭牌区域留白够 */
+.binder-slot .binder-art img { object-fit: cover; }
+
+/* 图鉴缩略图：让全幅卡面铺满格子，去掉两侧留白 */
+.binder-slot .binder-art {
+  background: #0b0d14;
+}
+
+.binder-slot .binder-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 9px;
+}
+
+/* 未解锁格子：更暗的底 + 细纹，不泄露卡面 */
+.binder-slot.locked .binder-art {
+  background: repeating-linear-gradient(135deg, #161a26 0 6px, #12151f 6px 12px);
+}
+
+/* ══════════ 图鉴册：窄屏头部改成竖排，别把格子的地方吃掉 ══════════ */
+@media (max-width: 820px) {
+  .binder-sheet {
+    width: min(96vw, 560px);
+  }
+
+  .binder-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 14px 16px 10px;
+  }
+
+  .binder-sub {
+    font-size: 10.5px;
+    line-height: 1.5;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .binder-title {
+    font-size: 17px;
+    margin: 2px 0 0;
+  }
+
+  .binder-rarity {
+    gap: 5px;
+    margin-top: 4px;
+  }
+
+  .rar-chip {
+    font-size: 10px;
+    padding: 1px 6px;
+  }
+
+  .binder-tabs {
+    margin: 4px 0 0;
+    gap: 6px;
+  }
+
+  .binder-tab {
+    flex: 1;
+    text-align: center;
+    padding: 7px 8px;
+    font-size: 11.5px;
+  }
+
+  .binder-actions {
+    margin-top: 2px;
+  }
+
+  .binder-actions button {
+    padding: 7px 12px;
+    font-size: 11.5px;
+  }
+
+  .binder-grid {
+    padding: 10px;
+    gap: 9px;
+  }
+}
+
+/* ══════════ 卡面层级：镭射在角色之下，角色永远最突出 ══════════ */
+/* DOM 顺序：bg → holo → glare → 角色 → 铭牌 → clearcoat */
+.card-face .foil-holo,
+.card-face .foil-glare {
+  z-index: 1;
+}
+
+.card-face .ca-ch {
+  position: relative;
+  z-index: 3;
+}
+
+.card-face .ca-plate {
+  z-index: 2;
+}
+
+/* 最上面那层清漆只留极淡的一层，不糊角色 */
+.card-face .foil-clearcoat {
+  z-index: 4;
+  opacity: 0.28 !important;
+}
+
+.card-face .ca-bg {
+  z-index: 0;
+}
+
+/* 角色自带的描边光，进一步把它从背景里拉出来 */
+/* 投影已烘进 -ch 图层，这里不再用 filter（3D 子树里会闪） */
+
+/* ══════════ 轮盘虚影降到卡片之下 ══════════ */
+.rune-halo {
+  z-index: 0;
+}
+
+.scene {
+  z-index: 2;
+}
+
+.pack-aura,
+.ground-shadow {
+  z-index: 1;
+}
+
+/* ══════════ 图鉴未收录：剪影 / 问号 ══════════ */
+.binder-art .silhouette-img {
+  filter: brightness(0) saturate(0) contrast(1.2);
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
+/* 剪影要压在浅一档的底上才看得见 */
+.binder-slot.locked .binder-art.is-silhouette {
+  background:
+    radial-gradient(circle at 50% 38%, #6b7488 0%, #454c5e 46%, #262b38 100%);
+}
+
+.binder-art .binder-qmark {
+  font-size: 52px;
+  font-weight: 700;
+  color: rgba(216, 226, 250, 0.72);
+  text-shadow: 0 0 22px rgba(150, 130, 235, 0.6);
+}
+
+.binder-slot.locked .binder-art.is-secret {
+  background:
+    radial-gradient(circle at 50% 40%, rgba(120, 92, 190, 0.22), transparent 62%),
+    repeating-linear-gradient(135deg, #14121f 0 7px, #100e19 7px 14px);
+}
+
+.binder-slot.locked.is-secret,
+.binder-slot.locked .binder-meta-name {
+  letter-spacing: 0.1em;
+}
+
+/* ══════════ 摇一摇：卡片被晃动的反馈 ══════════ */
+@keyframes cardWobble {
+  0%   { rotate: 0deg; }
+  18%  { rotate: -3.2deg; }
+  38%  { rotate: 2.6deg; }
+  58%  { rotate: -1.8deg; }
+  78%  { rotate: 1deg; }
+  100% { rotate: 0deg; }
+}
+
+.card.card-wobble {
+  animation: cardWobble 0.6s cubic-bezier(0.36, 0.6, 0.3, 1);
+}
+
+/* 手机上摇一摇的提示（第一次抽包后引导） */
+.has-gyro .gesture-hint .shake-tip {
+  display: inline;
+}
+
+.gesture-hint .shake-tip {
+  display: none;
+}
+
+/* 未解锁格子的图：原皮肤把它压成 11% 白，这里改成真正的黑色剪影 */
+.binder-slot.locked .binder-art img.silhouette-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 9px;
+  filter: brightness(0) saturate(0);
+  opacity: 0.92;
+}
+
+
+/* ══════════ 高清卡面：文字烘进背景层，角色压在最上面 ══════════ */
+/* 背景层本身已经含铭牌文字，不再需要 CSS 铭牌 */
+.card-face .ca-plate { display: none; }
+
+/* 背景层比角色轻微放大，倾斜时不会露出边缘 */
+.card-face .ca-bg {
+  transform: translate3d(calc((var(--px) - 50) * 0.05px), calc((var(--py) - 50) * 0.05px), 0) scale(1.05);
+}
+
+/* 角色层放大一档 + 更明显的轮廓光，倾斜时从卡面浮起 */
+.card-face .ca-ch {
+  transform: translate3d(calc((var(--px) - 50) * 0.26px), calc((var(--py) - 50) * 0.26px), 0) scale(1.03);
+  /* 注意：preserve-3d 子树里不要加 filter，安卓会整张卡闪 */
+}
+
+/* 高清图：禁止浏览器再插值糊掉 */
+.card-face img { image-rendering: auto; }
+
+/* ══════════ 铭牌独立成层：压在角色之上，制造前后景深 ══════════ */
+.card-face .ca-plate-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  z-index: 4;
+  transform: translate3d(calc((var(--px) - 50) * 0.30px), calc((var(--py) - 50) * 0.30px), 0);
+}
+
+.card-face .foil-clearcoat {
+  z-index: 5;
+}
+
+/* 角色比铭牌小一档位移，倾斜时铭牌在最前，人物被"框"在里面 */
+.card-face .ca-ch {
+  z-index: 3;
+}
+
+/* ══════════ 铭牌文字：DOM 渲染，反向抵消卡片旋转 ══════════ */
+/* 整块文字层反向抵消卡片旋转，名字/编号始终横向可读 */
+.card-face .ca-text {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  transform: rotate(calc(-1 * var(--rz, 0deg)));
+  transform-origin: 50% 92%;
+}
+
+.card-face .ca-plate-text {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0 6% 5.5%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.18em;
+}
+
+.card-face .ca-plate-text .ca-name {
+  font-family: var(--font-display, serif);
+  font-size: clamp(11px, 4.2cqw, 26px);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85), 0 0 2px rgba(0, 0, 0, 0.9);
+  line-height: 1.1;
+}
+
+.card-face .ca-plate-text .ca-sub {
+  font-size: clamp(7px, 2.4cqw, 14px);
+  letter-spacing: 0.05em;
+  color: rgba(224, 230, 244, 0.82);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+}
+
+.card-face .ca-text .ca-serial {
+  position: absolute;
+  top: 2.6%;
+  right: 6%;
+  font-size: clamp(6px, 2.1cqw, 12px);
+  color: rgba(214, 220, 236, 0.72);
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+}
