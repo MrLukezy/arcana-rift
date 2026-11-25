@@ -37,7 +37,7 @@ export const MASCOT_CONFIG = { glyph: '❖', rigged: false };
 export const CARD_POOL = [
   {
     "id": "001",
-    "anim": "img/card/001-anim.webp?v=4",
+    "anim": "img/card/001-anim.webp?v=5",
     "name": "月影狼德鲁伊",
     "tag": "德鲁伊",
     "trait": "狼娘 · 星月属性 · 发光种子",
@@ -2966,7 +2966,7 @@ export const CARD_POOL = [
   },
   {
     "id": "P23",
-    "anim": "img/card/P23-anim.webp?v=4",
+    "anim": "img/card/P23-anim.webp?v=5",
     "name": "神谕之钥",
     "tag": "遗物",
     "trait": "道具 · 圣光属性",

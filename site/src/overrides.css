@@ -520,7 +520,7 @@ body:has(.pack.tearing) .rune-halo { opacity: 0.55; }
   position: absolute;
   left: 0;
   top: 0;
-  width: 400%;
+  width: 600%;            /* 6 帧横排 */
   height: 100%;
   max-width: none;
   object-fit: fill;
@@ -533,16 +533,17 @@ body:has(.pack.tearing) .rune-halo { opacity: 0.55; }
 }
 
 .card.is-playing .ca-anim img {
-  animation: caAnimPlay 1.4s steps(4, jump-none) infinite;
+  animation: caAnimPlay 0.72s steps(6, jump-none) infinite alternate;
 }
 
 .card.is-playing .ca-ch {
   opacity: 0;
 }
 
+/* 6 帧：每帧占 1/6，最后一帧要停在 -5/6 */
 @keyframes caAnimPlay {
   0% { transform: translate3d(0, 0, 0); }
-  100% { transform: translate3d(-75%, 0, 0); }
+  100% { transform: translate3d(-83.3333%, 0, 0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
