@@ -13,6 +13,22 @@
   );
 }
 
+@property --px { syntax: "<number>"; inherits: true; initial-value: 50; }
+@property --py { syntax: "<number>"; inherits: true; initial-value: 50; }
+@property --hyp { syntax: "<number>"; inherits: true; initial-value: 0.45; }
+
+/* 无人操作时，镭射光斑自己缓慢游走 */
+.mcard {
+  animation: holoDrift 6.5s ease-in-out infinite alternate;
+}
+.mcard.manual { animation: none; }
+@keyframes holoDrift {
+  0%   { --px: 22; --py: 26; --hyp: 0.35; }
+  35%  { --px: 70; --py: 44; --hyp: 0.72; }
+  65%  { --px: 38; --py: 74; --hyp: 0.5; }
+  100% { --px: 78; --py: 60; --hyp: 0.8; }
+}
+
 .mcard {
   position: relative;
   width: 100%;
@@ -54,11 +70,18 @@
   border-radius: inherit; pointer-events: none;
   background: var(--holo-rainbow) calc(var(--px) * 1%) calc(var(--py) * 1%) / 400% 400%;
   mix-blend-mode: color-dodge;
-  opacity: calc(0.13 + var(--hyp) * 0.42);
+  opacity: calc(0.14 + var(--hyp) * 0.2);
+}
+
+/* N / R：软光混合，只给一层虹彩薄雾，不糊画面 */
+.mcard.r-common .mc-holo,
+.mcard.r-rare .mc-holo {
+  mix-blend-mode: soft-light;
+  opacity: calc(0.45 + var(--hyp) * 0.3);
 }
 
 /* 稀有度越高，镭射越张扬 */
-.mcard.r-holo .mc-holo { opacity: calc(0.18 + var(--hyp) * 0.46); }
+.mcard.r-holo .mc-holo { opacity: calc(0.2 + var(--hyp) * 0.26); }
 
 /* 眩光（会跟着指针走的白色高光） */
 .mc-glare {
@@ -71,7 +94,7 @@
     rgba(0, 0, 0, 0.3)
   );
   mix-blend-mode: overlay;
-  opacity: calc(0.16 + var(--hyp) * 0.42);
+  opacity: calc(0.2 + var(--hyp) * 0.26);
 }
 
 /* 角色（浮起） */
@@ -216,38 +239,39 @@
   pointer-events: none;
   background: linear-gradient(
     108deg,
-    transparent 38%,
-    rgba(255, 255, 255, 0.06) 44%,
-    rgba(255, 150, 220, 0.34) 47%,
-    rgba(150, 230, 255, 0.34) 50%,
-    rgba(255, 240, 150, 0.3) 53%,
-    rgba(255, 255, 255, 0.06) 57%,
-    transparent 63%
+    transparent 30%,
+    rgba(255, 255, 255, 0.08) 38%,
+    rgba(255, 130, 210, 0.5) 43%,
+    rgba(255, 250, 200, 0.55) 46%,
+    rgba(130, 235, 255, 0.5) 50%,
+    rgba(190, 150, 255, 0.45) 54%,
+    rgba(255, 255, 255, 0.1) 60%,
+    transparent 70%
   );
   mix-blend-mode: screen;
   opacity: 0;
-  animation: mcSweep 4.6s ease-in-out infinite;
+  animation: mcSweep 3.8s ease-in-out infinite;
 }
 
 @keyframes mcSweep {
-  0%   { transform: translateX(-60%) skewX(-8deg); opacity: 0; }
-  12%  { opacity: 0.9; }
-  46%  { transform: translateX(60%) skewX(-8deg); opacity: 0.85; }
-  56%  { opacity: 0; }
-  100% { transform: translateX(60%) skewX(-8deg); opacity: 0; }
+  0%   { transform: translateX(-70%) skewX(-8deg); opacity: 0; }
+  10%  { opacity: 1; }
+  52%  { transform: translateX(70%) skewX(-8deg); opacity: 0.95; }
+  62%  { opacity: 0; }
+  100% { transform: translateX(70%) skewX(-8deg); opacity: 0; }
 }
 
 /* 稀有度差异：金卡加放射光，秘宝加双向星芒 */
 .mcard.r-ultra .mc-holo {
   mix-blend-mode: overlay;
-  opacity: calc(0.34 + var(--hyp) * 0.36);
+  opacity: calc(0.32 + var(--hyp) * 0.3);
   background:
     repeating-conic-gradient(from calc(var(--px) * 1deg) at 50% 34%,
       transparent 0 4deg, rgba(255, 236, 170, 0.5) 5deg 6deg, transparent 7deg 12deg),
     var(--holo-rainbow) calc(var(--px) * 1%) calc(var(--py) * 1%) / 400% 400%;
 }
 .mcard.r-secret .mc-holo {
-  opacity: calc(0.38 + var(--hyp) * 0.4);
+  opacity: calc(0.36 + var(--hyp) * 0.32);
   background:
     repeating-conic-gradient(from calc(var(--px) * 1.4deg) at 50% 34%,
       rgba(255, 110, 218, 0.5) 0 4deg, transparent 4deg 12deg,
@@ -259,9 +283,9 @@
 
 
 
-.mi-coin {
+.mc-info .mi-coin {
   width: 10px; height: 10px; vertical-align: -1px;
   margin-left: 2px;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.7));
 }
-.mcard.lg .mi-coin { width: 13px; height: 13px; vertical-align: -2px; }
+.mcard.lg .mc-info .mi-coin { width: 13px; height: 13px; vertical-align: -2px; }

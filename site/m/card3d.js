@@ -74,12 +74,21 @@ export function bindHolo(root = document) {
       el.style.setProperty("--hyp", "0");
     };
 
-    el.addEventListener("pointerdown", (e) => { el.dataset.drag = "1"; set(e.clientX, e.clientY); });
+    el.addEventListener("pointerdown", (e) => {
+      el.dataset.drag = "1";
+      el.classList.add("manual");
+      set(e.clientX, e.clientY);
+    });
     el.addEventListener("pointermove", (e) => {
       if (e.pointerType === "mouse" || el.dataset.drag === "1") set(e.clientX, e.clientY);
     });
-    el.addEventListener("pointerup", () => { el.dataset.drag = ""; reset(); });
-    el.addEventListener("pointercancel", () => { el.dataset.drag = ""; reset(); });
+    const back = () => {
+      el.dataset.drag = "";
+      reset();
+      setTimeout(() => el.classList.remove("manual"), 900);
+    };
+    el.addEventListener("pointerup", back);
+    el.addEventListener("pointercancel", back);
     el.addEventListener("pointerleave", (e) => {
       if (e.pointerType === "mouse") reset();
       else if (el.dataset.drag !== "1") reset();
