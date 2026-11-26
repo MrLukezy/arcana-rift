@@ -3,17 +3,44 @@ import { CARD_POOL } from "../src/cards-config.js";
 
 const pushed = new Set();
 
+const RAR = {
+  common: ["N", "普通"], rare: ["R", "稀有"], holo: ["SR", "史诗"],
+  ultra: ["SSR", "传说"], secret: ["UR", "秘宝"],
+};
+const VALUE = { common: 40, rare: 90, holo: 200, ultra: 520, secret: 1400 };
+
 export function cardHTML(c, opts = {}) {
-  const rarity = c.rarity;
-  const name = c.name;
-  return `<div class="mcard r-${rarity}${opts.lg ? " lg" : ""}" data-holo="${c.id}">
+  const [mark, rname] = RAR[c.rarity] || ["N", "普通"];
+  const el = (c.trait.match(/([^\s·]+)属性/) || [, "无"])[1];
+  const val = VALUE[c.rarity] || 0;
+  const kind = c.kind === "char" ? "角色" : "道具";
+
+  const extra = opts.lg
+    ? `<div class="mi-row"><span>战力</span><b>${opts.power ?? ""}</b></div>
+       <div class="mi-row"><span>参考价</span><b>${val} <img class="mi-coin" src="../img/ui/icon_coin.webp" alt=""></b></div>
+       <div class="mi-row"><span>持有</span><b>×${opts.own ?? 1}</b></div>`
+    : `<div class="mi-foot"><span class="mi-power">战 ${opts.power ?? 0}</span><span class="mi-price">${val}<img class="mi-coin" src="../img/ui/icon_coin.webp" alt=""></span></div>`;
+
+  return `<div class="mcard r-${c.rarity}${opts.lg ? " lg" : ""}" data-holo="${c.id}">
     <div class="mcard-inner">
       <img class="mc-bg" src="../${c.artBg}" alt="" draggable="false">
       <i class="mc-holo"></i>
       <i class="mc-glare"></i>
-      <img class="mc-ch" src="../${c.artChar}" alt="${name}" draggable="false">
+      <img class="mc-ch" src="../${c.artChar}" alt="${c.name}" draggable="false">
       <img class="mc-plate" src="../${c.artPlate}" alt="" draggable="false">
-      <div class="mc-text"><div class="mc-name">${name}</div></div>
+
+      <div class="mc-info">
+        <div class="mc-name" data-txt="${c.name}">${c.name}</div>
+        <div class="mc-meta">
+          <span class="mc-rar r-${c.rarity}">${mark}</span>
+          <span class="mc-kv">${kind}</span>
+          <span class="mc-sep">·</span>
+          <span class="mc-kv">${el}</span>
+          ${opts.lg ? `<span class="mc-sep">·</span><span class="mc-kv">${rname}</span>` : ""}
+        </div>
+        ${extra}
+      </div>
+
       <i class="mc-clear"></i>
       <i class="mc-sheen"></i>
       <i class="mc-shine"></i>

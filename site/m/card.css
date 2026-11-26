@@ -1,4 +1,10 @@
 /* 全息卡（移动端）：保留桌面版的镭射/眩光/清漆层次 */
+@font-face {
+  font-family: "ZCool";
+  src: url("../fonts/zcool_sub.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
 
 :root {
   --holo-rainbow: repeating-linear-gradient(
@@ -82,24 +88,97 @@
   transform: translate3d(calc((var(--px) - 50) * 0.34px), calc((var(--py) - 50) * 0.34px), 0);
 }
 
-/* 铭牌文字：反向轻微旋转 + 烫金浮雕 */
-.mc-text {
-  position: absolute; left: 0; right: 0; bottom: 3.2%;
-  z-index: 5; text-align: center; pointer-events: none;
-  transform: rotate(calc(var(--rz, 0deg) * -0.4)) translateZ(10px);
-  transform-origin: 50% 92%;
+/* 铭牌信息层：3D 挤出标题 + 属性行 */
+.mc-info {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  z-index: 5; pointer-events: none;
+  padding: 26px 7% 8px;
+  text-align: center;
+  transform: rotate(calc(var(--rz, 0deg) * -0.4)) translateZ(12px);
+  transform-origin: 50% 100%;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    rgba(6, 4, 12, 0.42) 26%,
+    rgba(6, 4, 12, 0.86) 58%,
+    rgba(4, 3, 9, 0.97) 100%);
 }
+
+/* 铭牌上沿一道金色分隔线 */
+.mc-info::before {
+  content: "";
+  position: absolute; left: 12%; right: 12%; top: 15px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(247, 209, 138, 0.55), transparent);
+}
+
 .mc-name {
-  font-family: "Noto Serif SC", "Songti SC", serif;
-  font-weight: 700; letter-spacing: 0.06em;
-  font-size: 11.5px; line-height: 1.15;
-  color: #fffdf7;
+  font-family: "ZCool", "Noto Serif SC", serif;
+  font-size: 14px;
+  line-height: 1.16;
+  letter-spacing: 0.04em;
+  color: #fff8e2;
+  -webkit-text-stroke: 2.2px #3a2205;
+  paint-order: stroke fill;
   text-shadow:
-    0 1px 0 #c99a45,
-    0 2px 0 rgba(104, 68, 14, 0.55),
-    0 3px 4px rgba(0, 0, 0, 0.55),
-    0 6px 12px rgba(0, 0, 0, 0.7);
+    0 1px 0 #f6cf7a,
+    0 2px 0 #e0ae4e,
+    0 3px 0 #c28f34,
+    0 4px 0 #9d6f22,
+    0 5px 0 #7b5516,
+    0 7px 10px rgba(0, 0, 0, 0.75),
+    0 0 16px rgba(255, 205, 120, 0.32);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+.mc-meta {
+  margin-top: 4px;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  font-size: 8.5px; font-weight: 700;
+  color: rgba(240, 232, 214, 0.9);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.04em;
+}
+.mc-rar {
+  font-family: "ZCool", sans-serif;
+  font-size: 8.5px; padding: 0.5px 5px; border-radius: 4px;
+  letter-spacing: 0.06em;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.mc-sep { opacity: 0.45; }
+
+.mi-foot {
+  margin-top: 5px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  font-family: "ZCool", sans-serif;
+  font-size: 10px;
+  color: #ffe3a6;
+  text-shadow: 0 1px 0 #6a4a12, 0 3px 6px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.04em;
+}
+.mi-power { color: #ffd98a; }
+.mi-price { color: #9fe0ff; }
+
+/* 大卡：信息更完整 */
+.mcard.lg .mc-name { font-size: 21px; -webkit-text-stroke: 3px #3a2205; }
+.mcard.lg .mc-info { padding: 30px 8% 11px; }
+.mcard.lg .mc-info::before { top: 18px; }
+.mcard.lg .mc-meta { font-size: 11px; margin-top: 7px; gap: 6px; }
+.mcard.lg .mc-rar { font-size: 11px; padding: 1px 7px; }
+
+.mi-row {
+  display: flex; align-items: baseline; justify-content: space-between;
+  font-size: 11px; padding: 2px 0;
+  color: rgba(226, 216, 244, 0.72);
+  border-bottom: 1px dashed rgba(247, 209, 138, 0.16);
+}
+.mi-row b {
+  font-family: "ZCool", sans-serif;
+  font-size: 12.5px; color: #fff3d4;
+  text-shadow: 0 1px 0 #7a5516, 0 2px 6px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.03em;
+}
+.mi-row:last-child { border-bottom: 0; }
 
 /* 清漆层：边缘高光 + 斜向扫光 */
 .mc-clear {
@@ -178,5 +257,11 @@
 .mcard.r-ultra .mc-clear { box-shadow: inset 0 0 0 1.2px rgba(255, 214, 122, 0.7), inset 0 1.5px 1.5px rgba(255, 255, 255, 0.6), inset 0 -2px 5px rgba(0, 0, 0, 0.3); }
 .mcard.r-secret .mc-clear { box-shadow: inset 0 0 0 1.4px rgba(255, 214, 122, 0.8), inset 0 1.5px 1.5px rgba(255, 255, 255, 0.7), inset 0 -2px 5px rgba(0, 0, 0, 0.3); }
 
-/* 大卡（详情弹层） */
-.mcard.lg .mc-name { font-size: 17px; }
+
+
+.mi-coin {
+  width: 10px; height: 10px; vertical-align: -1px;
+  margin-left: 2px;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.7));
+}
+.mcard.lg .mi-coin { width: 13px; height: 13px; vertical-align: -2px; }

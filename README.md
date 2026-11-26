@@ -237,3 +237,31 @@ SR 0.18–0.64），效果等价且不会触发重绘抖动。
 
 稀有度也做了区分：SSR 叠放射光束（`repeating-conic-gradient`），UR 叠双向星芒。
 指针拖动 / 鼠标悬停时彩虹和眩光跟着走；松手回正。
+
+## 第四轮：信息上卡 + 展示字体
+
+原来卡面只有名字，类型/属性/战力/价格散落在弹层的列表里。现在全部收进卡片底部的**独立信息层**：
+
+```
+.mc-info            ← 独立图层，translateZ(12px)，反向旋转 40%
+  .mc-name          名字：ZCOOL 庆科黄油体 + 5 层金色挤出错觉
+  .mc-meta          SR 徽标 · 类型 · 属性
+  .mi-row           战力 / 参考价 / 持有（大卡）
+  .mi-foot          战 10 · 40⦿（列表小卡）
+```
+
+字体用 **ZCOOL 庆科黄油体**（SIL OFL），通过 Google Fonts 的 `text=` 参数只请求
+卡名/标签/数字用到的 370 个字形，子集后 woff2 只有 **62KB**，直接自托管在 `site/fonts/`。
+
+名字的立体感靠多层 `text-shadow` 做挤出：
+
+```css
+-webkit-text-stroke: 2.2px #3a2205;
+paint-order: stroke fill;
+text-shadow:
+  0 1px 0 #f6cf7a, 0 2px 0 #e0ae4e, 0 3px 0 #c28f34,
+  0 4px 0 #9d6f22, 0 5px 0 #7b5516,
+  0 7px 10px rgba(0,0,0,.75), 0 0 16px rgba(255,205,120,.32);
+```
+
+配合 `-webkit-text-stroke` 深色描边，小字号也能立住。

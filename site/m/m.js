@@ -336,7 +336,7 @@ function viewPack() {
       <div class="result-grid">
         ${packState.results.map((r, i) => `
           <div class="result-card ${r.isNew ? "new" : ""}" data-res="${i}" style="animation-delay:${i * 70}ms">
-            ${cardHTML(r.card)}
+            ${cardHTML(r.card, { power: pickPower(r.card.id) })}
           </div>`).join("")}
       </div>
       <button class="btn" id="packAgain">再开一包</button>
@@ -602,17 +602,13 @@ function cardSheet(id) {
   const price = sellPrice(c);
   const hot = el === S.hot.element;
   openSheet(`
-    <div style="max-width:236px;margin:0 auto 12px">${cardHTML(c, { lg: true })}</div>
-    <h3>${c.name} <span class="rmark ${r.cls}" style="position:static;display:inline-block;vertical-align:2px">${r.label}</span></h3>
-    <div class="kv"><span>类型</span><b>${c.kind === "char" ? "角色" : "道具"}</b></div>
-    <div class="kv"><span>属性</span><b>${el}${hot ? " 🔥热门" : ""}</b></div>
-    <div class="kv"><span>战力</span><b>${pickPower(id)}</b></div>
-    <div class="kv"><span>参考价</span><b>${r.value} ◉</b></div>
-    <div class="kv"><span>回收价</span><b>${price} ◉</b></div>
-    <div class="kv"><span>持有</span><b>×${S.bag[id] || 0}</b></div>
-    <div class="sheet-actions">
-      <button class="btn ghost" data-act="close">关闭</button>
-      <button class="btn ghost" data-act="shelve">上陈列</button>
+    <div style="max-width:250px;margin:0 auto 4px">
+      ${cardHTML(c, { lg: true, power: pickPower(id), own: S.bag[id] || 1 })}
+    </div>
+    ${hot ? `<div class="center" style="font-size:11px;color:#ff9be0;margin:6px 0 0">🔥 今日热门属性 · 回收价 +30%</div>` : ""}
+    <div class="sheet-actions" style="justify-content:space-between;margin-top:14px">
+      <button class="btn ghost sm" data-act="close">关闭</button>
+      <button class="btn ghost sm" data-act="shelve">上陈列</button>
       <button class="btn" data-act="recycle" data-id="${id}">回收 ${price}◉</button>
     </div>`);
 }
