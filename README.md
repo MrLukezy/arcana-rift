@@ -174,3 +174,42 @@ git checkout mobie
 ```
 
 桌面版仍是 `index.html`（PRISM 撕卡开包台），移动版是 `/m/`，两者共用同一套卡面与 `cards-config.js`。
+
+## 第二轮：游戏化 UI + 三消战斗
+
+### 美术统一
+
+所有 UI 素材都用 hfsy 生成，**以卡牌立绘为参考图**锁死画风（暗紫 + 鎏金 + 水墨），
+绿幕出图后本地抠像：
+
+| 素材 | 用途 |
+|---|---|
+| `icon_home/bag/pack/fight/trade` | 底部导航五个图标 |
+| `icon_coin/gem/ticket` | 顶部三种货币 |
+| `icon_mail/task/fire/lock` | 信箱、任务、今日热门、未解锁 |
+| `gem_fire/water/wind/thunder/light/dark` | 三消棋子（菱形宝石） |
+| `pack_front` | 开包页卡包正面 |
+
+流程：`pipeline/gen_ui.py`（6 并发，参考图 + 绿幕）→ `pipeline/process_ui.py`（色键抠像、
+连通域裁剪、统一尺寸输出 webp）。共 19 个素材，合计 496KB。
+
+### 界面
+
+- 竖屏约束：`body { max-width: 480px }`，宽屏下也是手机比例
+- 面板统一 `.panel`：紫黑渐变 + 内阴影 + 金色角标（`::before/::after` 画 12px 折角线）
+- 按钮 `.btn`：鎏金渐变 + 顶部高光 + 底部立体边 + 按下位移
+- 底部导航：五个生成图标，中间开包按钮放大并加光晕
+
+### 三消战斗
+
+原对战（比大小）换成**竖屏三消**，规则移植自本机 `matchgame` 项目（8×N 棋盘 → 这里 7×7）：
+
+- 六色宝石，交换相邻凑 3 消
+- 伤害 = 消除数 ×（与卡组属性共鸣则 ×2）× 连击加成（每连 +30%）
+- 玩家生命 = 60 + 卡组数 × 20；敌方 HP/攻击力由对手卡稀有度决定
+- 每回合玩家交换一次，敌方反击一次
+- 消除后塌落补充、无解自动重排
+- 胜负结算金币与经验，写进试炼记录
+
+`site/m/battle3.js` 是一个独立的战斗模块，`createBattle({host, deck, enemy, onEnd})`，
+DOM 渲染 49 个格子 + CSS 动画，不依赖 canvas。

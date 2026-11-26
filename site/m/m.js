@@ -1,5 +1,6 @@
 /* 星界盟约 · 店长（移动端） */
 import { CARD_POOL } from "../src/cards-config.js";
+import { createBattle } from "./battle3.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -114,6 +115,14 @@ function rollRarity() {
 
 function poolByRarity(k) { return CARD_POOL.filter((c) => c.rarity === k); }
 
+function pickPower(id) {
+  const c = byId.get(id);
+  if (!c) return 0;
+  const base = RARITY[c.rarity].power;
+  const hot = elementOf(c) === S.hot.element ? 1.15 : 1;
+  return Math.round(base * hot);
+}
+
 function drawOne() {
   const k = rollRarity();
   const pool = poolByRarity(k);
@@ -177,7 +186,7 @@ function viewHome() {
     : [1, 2, 3, 4, 5, 6].map((i) =>
         i <= 3
           ? `<div class="slot"><span>＋</span><span>陈列</span></div>`
-          : `<div class="slot lock"><span>🔒</span><span>Lv${i === 4 ? 8 : i === 5 ? 15 : 25}</span></div>`
+          : `<div class="slot lock"><img src="../img/ui/icon_lock.webp" alt=""><span>Lv${i === 4 ? 8 : i === 5 ? 15 : 25}</span></div>`
       ).join("");
 
   const unread = S.mail.filter((m) => !m.got).length;
@@ -185,21 +194,21 @@ function viewHome() {
   return `
   <div class="grid2">
     <div class="tile gift">
-      <div class="tile-title">🎁 免费卡包</div>
+      <div class="tile-head"><img src="../img/ui/icon_pack.webp" alt=""><div class="tile-title">免费卡包</div></div>
       <div class="tile-note">${freeNote}</div>
       <button class="btn" id="goPack" ${S.free.n <= 0 ? "disabled" : ""}>开启</button>
     </div>
     <div class="tile">
-      <div class="tile-title">📜 任务</div>
+      <div class="tile-head"><img src="../img/ui/icon_task.webp" alt=""><div class="tile-title">任务</div></div>
       <div class="tile-note">${taskDone()}/5 完成</div>
       <button class="btn ghost" id="goTasks">查看</button>
     </div>
   </div>
 
-  <div class="card-block">
+  <div class="panel">
     ${unread ? `<span class="badge">${unread}</span>` : ""}
     <div class="mail-row">
-      <div class="mail-ico">✉️</div>
+      <div class="mail-ico"><img src="../img/ui/icon_mail.webp" alt=""></div>
       <div class="mail-txt">
         <b>信箱</b>
         <span>${S.mail.find((m) => !m.got)?.desc || "没有未读信件"}</span>
@@ -212,8 +221,8 @@ function viewHome() {
   <div class="slots">${slots}</div>
 
   <div class="h2">今日活动</div>
-  <div class="card-block hot">
-    <span class="big">🔥</span>
+  <div class="panel hot">
+    <img src="../img/ui/icon_fire.webp" alt="">
     <div>
       今日热门：<b>${hot}属性</b><br>
       <span class="hint">该属性卡回收价 +30%</span>
@@ -221,7 +230,7 @@ function viewHome() {
   </div>
 
   <div class="h2">保底进度</div>
-  <div class="card-block">
+  <div class="panel">
     <div class="pity">
       <div class="bar"><i style="width:${pityPct}%"></i></div>
       <span>${S.pity}/${PITY_MAX}</span>
@@ -259,7 +268,7 @@ function viewTasks() {
     const done = v >= t.need;
     const claimed = S.tasks.claimed.includes(t.key);
     return `
-    <div class="card-block">
+    <div class="panel">
       <div class="mail-row">
         <div class="mail-ico">${done ? "✅" : "🎯"}</div>
         <div class="mail-txt">
@@ -342,6 +351,7 @@ function viewPack() {
     <div class="tear-wrap ${packState.charge ? "charged" : ""}" id="tearWrap">
       <div class="pack-halo"></div>
       <div class="pack-skin ${packState.torn ? "torn" : ""}" id="packSkin">
+        <img src="../img/ui/pack_front.webp" alt="卡包" draggable="false">
         <div class="tear-progress"><i id="tearBar"></i></div>
       </div>
     </div>
@@ -425,25 +435,39 @@ function finishTear() {
   }, 460);
 }
 
-/* ───────── 对战 ───────── */
-function pickPower(id) {
-  const c = byId.get(id);
-  const base = RARITY[c.rarity].power;
-  const hot = elementOf(c) === S.hot.element ? 1.15 : 1;
-  return Math.round(base * hot);
+/* ───────── 对战（三消） ───────── */
+let fightMode = "setup";
+let battleInst = null;
+
+function makeEnemy() {
+  // 从 SR 以上里挑一个当对手
+  const pool = CARD_POOL.filter((c) => ORDER.indexOf(c.rarity) >= 2);
+  const c = pool[Math.floor(Math.random() * pool.length)];
+  const r = RARITY[c.rarity];
+  return {
+    card: c,
+    name: c.name,
+    art: `../${c.fullArtImage}`,
+    hp: 110 + r.power * 3 + Math.floor(Math.random() * 40),
+    atk: 6 + Math.round(r.power / 3),
+  };
 }
 
 function viewFight() {
+  if (fightMode === "battle") {
+    return `<div id="m3Host"></div>`;
+  }
+
   if (S.fightsLeft <= 0) {
     return `
-    <div class="h2">对战</div>
-    <div class="card-block center">
-      <div style="font-size:34px;margin:6px 0 10px">⚔️</div>
+    <div class="h2">元素试炼</div>
+    <div class="panel center">
+      <div style="font-size:34px;margin:8px 0 10px">⚔️</div>
       <div style="font-size:13px;margin-bottom:6px">今日挑战次数已用完</div>
       <div class="hint">明天 0 点恢复 5 次</div>
     </div>
-    <div class="h2">对战记录</div>
-    <div class="card-block log">${S.fightLog.slice(0, 8).map((l) => `<div>${l}</div>`).join("") || "<span class='hint'>暂无记录</span>"}</div>`;
+    <div class="h2">试炼记录</div>
+    <div class="panel"><div class="hint" style="line-height:2">${S.fightLog.slice(0, 8).map((l) => `<div>${l}</div>`).join("") || "暂无记录"}</div></div>`;
   }
 
   const owned = bagList().slice(0, 40);
@@ -451,35 +475,67 @@ function viewFight() {
     ? owned.map((id) => {
         const c = byId.get(id);
         return `<div class="bag-item ${S.picks.includes(id) ? "on" : ""}" data-pick="${id}">
-          <img src="../${c.fullArtImage}" alt="${c.name}">
+          <img src="../${c.fullArtImage}" alt="${c.name}" loading="lazy">
         </div>`;
       }).join("")
-    : `<div class="bag-empty" style="grid-column:1/-1">背包是空的，先去开包</div>`;
+    : `<div class="bag-empty" style="grid-column:1/-1">背包是空的<br>先去开包抽几张</div>`;
 
-  const myPower = S.picks.reduce((s, id) => s + pickPower(id), 0);
+  const aff = S.picks.map((id) => elementOf(byId.get(id)));
+  const affTxt = aff.length ? [...new Set(aff)].join(" / ") : "—";
 
   return `
   <div class="h2">出战卡组 <span class="hint" style="font-weight:400">选 1～3 张</span></div>
-  <div class="card-block">
-    <div class="fight-row">
-      <div>
-        <div class="hint">我方战力</div>
-        <div class="power">${myPower}</div>
-      </div>
-      <div class="vs">VS</div>
-      <div style="text-align:right">
-        <div class="hint">今日剩余</div>
-        <div class="power">${S.fightsLeft}</div>
-      </div>
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink-dim)">
+      <span>生命 <b style="color:var(--ok)">${60 + S.picks.length * 20}</b></span>
+      <span>共鸣属性 <b style="color:var(--gold)">${affTxt}</b></span>
+      <span>今日剩余 <b style="color:var(--gold)">${S.fightsLeft}</b></span>
     </div>
   </div>
-  <div class="pick3" style="display:flex;flex-wrap:wrap;gap:8px">${cards}</div>
+  <div class="bag-grid" style="margin-top:2px">${cards}</div>
   <div style="margin:14px 0">
-    <button class="btn" id="doFight" ${S.picks.length ? "" : "disabled"}>开始对战</button>
-    <button class="btn ghost" style="margin-left:8px" id="clearPicks">清空</button>
+    <button class="btn block" id="doFight" ${S.picks.length ? "" : "disabled"}>进入元素试炼</button>
   </div>
-  <div class="h2">对战记录</div>
-  <div class="card-block log">${S.fightLog.slice(0, 8).map((l) => `<div>${l}</div>`).join("") || "<span class='hint'>暂无记录</span>"}</div>`;
+  <div class="hint" style="margin-top:6px">三消规则：交换相邻宝石凑够 3 个同色即造成伤害；与卡组属性共鸣的宝石伤害翻倍。</div>
+  <div class="h2">试炼记录</div>
+  <div class="panel"><div class="hint" style="line-height:2">${S.fightLog.slice(0, 8).map((l) => `<div>${l}</div>`).join("") || "暂无记录"}</div></div>`;
+}
+
+function startBattle() {
+  if (!S.picks.length) return;
+  const deck = S.picks.map((id) => {
+    const c = byId.get(id);
+    return { card: c, element: elementOf(c), power: pickPower(id) };
+  });
+  const enemy = makeEnemy();
+  S.fightsLeft -= 1;
+  S.tasks.fights += 1;
+  save();
+  fightMode = "battle";
+  render();
+
+  const host = document.querySelector("#m3Host");
+  battleInst = createBattle({
+    host,
+    deck,
+    enemy,
+    toast,
+    onEnd({ win, turns, hpLeft }) {
+      const base = 40 + deck.reduce((s2, d) => s2 + d.power, 0);
+      const gain = win ? base * 2 : Math.round(base * 0.35);
+      S.fightLog.unshift(`${win ? "🏆 胜利" : "💥 失败"} · ${enemy.name} · ${turns} 回合 · +${gain}◉`);
+      S.fightLog = S.fightLog.slice(0, 12);
+      addCoins(gain, win ? "试炼胜利" : "试炼");
+      addXp(win ? 20 : 6);
+      save();
+      fightMode = "setup";
+      render();
+      openSheet(`
+        <h3>${win ? "🏆 试炼通过" : "💥 试炼失败"}</h3>
+        <p>对手：<b>${enemy.name}</b><br>回合数：<b>${turns}</b> · 剩余生命：<b>${hpLeft}</b><br>奖励：<b style="color:var(--gold)">${gain} 金币</b></p>
+        <div class="sheet-actions"><button class="btn ghost" data-act="close">收下</button></div>`);
+    },
+  });
 }
 
 /* ───────── 交易 ───────── */
@@ -595,6 +651,10 @@ function startClock() {
 document.addEventListener("click", (e) => {
   const tabBtn = e.target.closest(".tab");
   if (tabBtn) {
+    if (tab !== "fight" && fightMode === "battle") {
+      fightMode = "setup";
+      battleInst = null;
+    }
     tab = tabBtn.dataset.tab;
     if (tab === "pack" && packState.results.length === 0) {
       syncFree();
@@ -619,7 +679,7 @@ document.addEventListener("click", (e) => {
   }
   if (t.id === "sellHint") { tab = "bag"; render(); return; }
   if (t.id === "clearPicks") { S.picks = []; save(); render(); return; }
-  if (t.id === "doFight") { doFight(); return; }
+  if (t.id === "doFight") { startBattle(); return; }
   if (t.id === "sheet") { closeSheet(); return; }
 
   const f = t.closest("[data-f]");
