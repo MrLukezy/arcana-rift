@@ -213,3 +213,27 @@ git checkout mobie
 
 `site/m/battle3.js` 是一个独立的战斗模块，`createBattle({host, deck, enemy, onEnd})`，
 DOM 渲染 49 个格子 + CSS 动画，不依赖 canvas。
+
+## 第三轮：抽卡保留全息镭射
+
+移动版一开始把卡面拍平成一张合成图，镭射/眩光全丢了。现在恢复桌面版的层次结构：
+
+```html
+.mcard                    ← 3D 倾斜容器（--rx/--ry/--px/--py/--hyp）
+  .mc-bg      背景层      ← 视差 0.07
+  .mc-holo    镭射彩虹    ← color-dodge，随指针移动，倾斜越大越强
+  .mc-glare   眩光        ← overlay，跟着指针走的白色径向高光
+  .mc-ch      角色层      ← 视差 0.3，浮起
+  .mc-plate   铭牌层      ← 视差 0.34
+  .mc-text    铭牌文字    ← 反向旋转 40% + 烫金浮雕
+  .mc-clear   清漆        ← 内圈高光 + 边缘反光
+  .mc-sheen   常驻斜向光泽
+  .mc-shine   镭射扫光    ← 4.6s 循环掠过的彩虹光带
+```
+
+**关键差异**：桌面版用 `filter: brightness(.74) contrast(1.48)` 压住彩虹；
+移动端 3D 子树里不能加 `filter`（安卓会闪），所以改成**满饱和彩虹 + 低透明度**（N/R 0.13–0.55，
+SR 0.18–0.64），效果等价且不会触发重绘抖动。
+
+稀有度也做了区分：SSR 叠放射光束（`repeating-conic-gradient`），UR 叠双向星芒。
+指针拖动 / 鼠标悬停时彩虹和眩光跟着走；松手回正。

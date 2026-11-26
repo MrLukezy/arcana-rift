@@ -1,0 +1,182 @@
+/* 全息卡（移动端）：保留桌面版的镭射/眩光/清漆层次 */
+
+:root {
+  --holo-rainbow: repeating-linear-gradient(
+    112deg,
+    #ff75a8 0%, #ffd166 5%, #9eff87 10%, #66e3ff 15%, #9c8aff 20%, #ff75a8 25%
+  );
+}
+
+.mcard {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  border-radius: 11px;
+  transform-style: preserve-3d;
+  transform:
+    translateZ(0)
+    rotateX(var(--rx, 0deg))
+    rotateY(var(--ry, 0deg));
+  transition: transform 0.18s ease-out;
+  will-change: transform;
+  --px: 50;
+  --py: 50;
+  --hyp: 0;
+}
+
+.mcard-inner {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  background: #17102b;
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+/* 背景 */
+.mc-bg {
+  position: absolute; inset: 0; z-index: 0;
+  width: 100%; height: 100%; object-fit: cover;
+  transform: translate3d(calc((var(--px) - 50) * 0.07px), calc((var(--py) - 50) * 0.07px), 0) scale(1.07);
+}
+
+/* 镭射彩虹（下层） */
+.mc-holo {
+  position: absolute; inset: 0; z-index: 1;
+  border-radius: inherit; pointer-events: none;
+  background: var(--holo-rainbow) calc(var(--px) * 1%) calc(var(--py) * 1%) / 400% 400%;
+  mix-blend-mode: color-dodge;
+  opacity: calc(0.13 + var(--hyp) * 0.42);
+}
+
+/* 稀有度越高，镭射越张扬 */
+.mcard.r-holo .mc-holo { opacity: calc(0.18 + var(--hyp) * 0.46); }
+
+/* 眩光（会跟着指针走的白色高光） */
+.mc-glare {
+  position: absolute; inset: 0; z-index: 2;
+  border-radius: inherit; pointer-events: none;
+  background: radial-gradient(
+    farthest-corner circle at calc(var(--px) * 1%) calc(var(--py) * 1%),
+    rgba(255, 255, 255, 0.62),
+    rgba(255, 255, 255, 0.1) 36%,
+    rgba(0, 0, 0, 0.3)
+  );
+  mix-blend-mode: overlay;
+  opacity: calc(0.16 + var(--hyp) * 0.42);
+}
+
+/* 角色（浮起） */
+.mc-ch {
+  position: absolute; inset: 0; z-index: 3;
+  width: 100%; height: 100%; object-fit: cover;
+  transform: translate3d(calc((var(--px) - 50) * 0.3px), calc((var(--py) - 50) * 0.3px), 0) scale(1.035);
+}
+
+/* 铭牌 */
+.mc-plate {
+  position: absolute; inset: 0; z-index: 4;
+  width: 100%; height: 100%; object-fit: cover;
+  transform: translate3d(calc((var(--px) - 50) * 0.34px), calc((var(--py) - 50) * 0.34px), 0);
+}
+
+/* 铭牌文字：反向轻微旋转 + 烫金浮雕 */
+.mc-text {
+  position: absolute; left: 0; right: 0; bottom: 3.2%;
+  z-index: 5; text-align: center; pointer-events: none;
+  transform: rotate(calc(var(--rz, 0deg) * -0.4)) translateZ(10px);
+  transform-origin: 50% 92%;
+}
+.mc-name {
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-weight: 700; letter-spacing: 0.06em;
+  font-size: 11.5px; line-height: 1.15;
+  color: #fffdf7;
+  text-shadow:
+    0 1px 0 #c99a45,
+    0 2px 0 rgba(104, 68, 14, 0.55),
+    0 3px 4px rgba(0, 0, 0, 0.55),
+    0 6px 12px rgba(0, 0, 0, 0.7);
+}
+
+/* 清漆层：边缘高光 + 斜向扫光 */
+.mc-clear {
+  position: absolute; inset: 0; z-index: 6;
+  border-radius: inherit; pointer-events: none;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.3),
+    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.6),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.3);
+  background:
+    radial-gradient(42% 26% at calc(var(--px) * 1%) calc(var(--py) * 1%),
+      rgba(255, 255, 255, calc(0.05 + var(--hyp) * 0.3)), transparent 70%),
+    linear-gradient(rgba(255, 255, 255, 0.16), transparent 14%);
+}
+
+/* 常驻光泽：不管动画走到哪一帧，卡面都有一道斜向高光 */
+.mc-sheen {
+  position: absolute; inset: 0; z-index: 7; pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    112deg,
+    transparent 32%,
+    rgba(255, 255, 255, 0.1) 43%,
+    rgba(255, 220, 255, 0.16) 48%,
+    rgba(200, 240, 255, 0.14) 53%,
+    rgba(255, 255, 255, 0.08) 62%,
+    transparent 72%
+  );
+  mix-blend-mode: screen;
+}
+
+/* 镭射扫光：一条斜向彩虹光带缓慢掠过 */
+.mc-shine {
+  position: absolute; inset: -30% -60%; z-index: 7;
+  pointer-events: none;
+  background: linear-gradient(
+    108deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.06) 44%,
+    rgba(255, 150, 220, 0.34) 47%,
+    rgba(150, 230, 255, 0.34) 50%,
+    rgba(255, 240, 150, 0.3) 53%,
+    rgba(255, 255, 255, 0.06) 57%,
+    transparent 63%
+  );
+  mix-blend-mode: screen;
+  opacity: 0;
+  animation: mcSweep 4.6s ease-in-out infinite;
+}
+
+@keyframes mcSweep {
+  0%   { transform: translateX(-60%) skewX(-8deg); opacity: 0; }
+  12%  { opacity: 0.9; }
+  46%  { transform: translateX(60%) skewX(-8deg); opacity: 0.85; }
+  56%  { opacity: 0; }
+  100% { transform: translateX(60%) skewX(-8deg); opacity: 0; }
+}
+
+/* 稀有度差异：金卡加放射光，秘宝加双向星芒 */
+.mcard.r-ultra .mc-holo {
+  mix-blend-mode: overlay;
+  opacity: calc(0.34 + var(--hyp) * 0.36);
+  background:
+    repeating-conic-gradient(from calc(var(--px) * 1deg) at 50% 34%,
+      transparent 0 4deg, rgba(255, 236, 170, 0.5) 5deg 6deg, transparent 7deg 12deg),
+    var(--holo-rainbow) calc(var(--px) * 1%) calc(var(--py) * 1%) / 400% 400%;
+}
+.mcard.r-secret .mc-holo {
+  opacity: calc(0.38 + var(--hyp) * 0.4);
+  background:
+    repeating-conic-gradient(from calc(var(--px) * 1.4deg) at 50% 34%,
+      rgba(255, 110, 218, 0.5) 0 4deg, transparent 4deg 12deg,
+      rgba(92, 230, 255, 0.5) 12deg 16deg, transparent 16deg 24deg),
+    var(--holo-rainbow) calc(var(--px) * 1%) calc(var(--py) * 1%) / 320% 320%;
+}
+.mcard.r-ultra .mc-clear { box-shadow: inset 0 0 0 1.2px rgba(255, 214, 122, 0.7), inset 0 1.5px 1.5px rgba(255, 255, 255, 0.6), inset 0 -2px 5px rgba(0, 0, 0, 0.3); }
+.mcard.r-secret .mc-clear { box-shadow: inset 0 0 0 1.4px rgba(255, 214, 122, 0.8), inset 0 1.5px 1.5px rgba(255, 255, 255, 0.7), inset 0 -2px 5px rgba(0, 0, 0, 0.3); }
+
+/* 大卡（详情弹层） */
+.mcard.lg .mc-name { font-size: 17px; }

@@ -1,6 +1,7 @@
 /* 星界盟约 · 店长（移动端） */
 import { CARD_POOL } from "../src/cards-config.js";
 import { createBattle } from "./battle3.js";
+import { cardHTML, bindHolo } from "./card3d.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -335,7 +336,7 @@ function viewPack() {
       <div class="result-grid">
         ${packState.results.map((r, i) => `
           <div class="result-card ${r.isNew ? "new" : ""}" data-res="${i}" style="animation-delay:${i * 70}ms">
-            <img src="../${r.card.fullArtImage}" alt="${r.card.name}">
+            ${cardHTML(r.card)}
           </div>`).join("")}
       </div>
       <button class="btn" id="packAgain">再开一包</button>
@@ -590,6 +591,7 @@ function viewTrade() {
 function openSheet(html) {
   $("#sheetCard").innerHTML = html;
   $("#sheet").hidden = false;
+  bindHolo($("#sheetCard"));
 }
 function closeSheet() { $("#sheet").hidden = true; }
 
@@ -600,7 +602,7 @@ function cardSheet(id) {
   const price = sellPrice(c);
   const hot = el === S.hot.element;
   openSheet(`
-    <img class="detail-art" src="../${c.fullArtImage}" alt="${c.name}">
+    <div style="max-width:236px;margin:0 auto 12px">${cardHTML(c, { lg: true })}</div>
     <h3>${c.name} <span class="rmark ${r.cls}" style="position:static;display:inline-block;vertical-align:2px">${r.label}</span></h3>
     <div class="kv"><span>类型</span><b>${c.kind === "char" ? "角色" : "道具"}</b></div>
     <div class="kv"><span>属性</span><b>${el}${hot ? " 🔥热门" : ""}</b></div>
@@ -632,6 +634,7 @@ function render() {
   $("#view").innerHTML = html;
   $$(".tab").forEach((b) => b.classList.toggle("on", b.dataset.tab === tab));
   if (tab === "pack") bindTear();
+  bindHolo(document);
   if (tab === "home") startClock();
 }
 
@@ -684,6 +687,13 @@ document.addEventListener("click", (e) => {
 
   const f = t.closest("[data-f]");
   if (f) { bagFilter = f.dataset.f; render(); return; }
+
+  const resCard = t.closest("[data-res]");
+  if (resCard) {
+    const r = packState.results[+resCard.dataset.res];
+    if (r) cardSheet(r.card.id);
+    return;
+  }
 
   const cid = t.closest("[data-card]")?.dataset.card;
   if (cid) { cardSheet(cid); return; }
