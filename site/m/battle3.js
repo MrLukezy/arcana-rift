@@ -1,4 +1,4 @@
-/* 三消对战（移植自 matchgame/web3d 的棋盘规则，改成竖屏 DOM 棋盘） */
+/* 三消对战 v2：上舞台 + 下棋盘，拖动/点选交换，带真实位移动画 */
 
 export const GEMS = [
   { key: "fire", name: "火", color: "#ff7a45", icon: "../img/ui/gem_fire.webp" },
@@ -15,79 +15,79 @@ const WAIT = (ms) => new Promise((r) => setTimeout(r, ms));
 const rnd = (n) => Math.floor(Math.random() * n);
 
 export function createBattle(opts) {
-  /**
-   * opts: { host, deck: [{card, power, element}], enemy: {name, hp, atk, art},
-   *         onEnd(result), toast(msg) }
-   */
-  const { host, deck, enemy, onEnd, toast } = opts;
+  const { host, deck, enemy, onEnd } = opts;
 
   const affinity = {};
   for (const d of deck) affinity[d.element] = (affinity[d.element] || 0) + 1;
 
-  const state = {
-    grid: [],
-    busy: false,
-    sel: null,
-    combo: 0,
-    playerHp: 60 + deck.length * 20,
-    playerMax: 60 + deck.length * 20,
-    enemyHp: enemy.hp,
-    enemyMax: enemy.hp,
-    turns: 0,
-    over: false,
+  let uid = 1;
+  const st = {
+    grid: [], busy: false, sel: null, combo: 0,
+    playerHp: 70 + deck.length * 22,
+    enemyHp: enemy.hp, enemyMax: enemy.hp,
+    turns: 0, over: false,
   };
+  st.playerMax = st.playerHp;
+  const el = {};
 
-  /* ── 棋盘生成 ── */
-  function makeGrid() {
+  const mk = (g) => ({ id: uid++, g: g === undefined ? rnd(N) : g });
+
+  function fresh() {
     let guard = 0;
     do {
-      state.grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => rnd(N)));
+      st.grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => mk()));
       guard++;
-    } while ((findRuns().length || !hasMove()) && guard < 60);
+    } while ((runs().length || !hasMove()) && guard < 80);
   }
 
-  function findRuns(g = state.grid) {
-    const runs = [];
+  function runs(g = st.grid) {
+    const out = [];
     for (let r = 0; r < ROWS; r++) {
       let c = 0;
       while (c < COLS) {
-        const v = g[r][c];
+        const v = g[r][c].g, s = c;
         let e = c;
-        while (e + 1 < COLS && g[r][e + 1] === v) e++;
-        if (e - c + 1 >= 3) runs.push({ dir: "h", r, c, len: e - c + 1, e: v, cells: range(r, c, "h", e - c + 1) });
+        while (e + 1 < COLS && g[r][e + 1].g === v) e++;
+        if (e - s + 1 >= 3) out.push({ r, c: s, g: v, cells: range(r, s, "h", e - s + 1) });
         c = e + 1;
       }
     }
     for (let c = 0; c < COLS; c++) {
       let r = 0;
       while (r < ROWS) {
-        const v = g[r][c];
+        const v = g[r][c].g, s = r;
         let e = r;
-        while (e + 1 < ROWS && g[e + 1][c] === v) e++;
-        if (e - r + 1 >= 3) runs.push({ dir: "v", r, c, len: e - r + 1, e: v, cells: range(r, c, "v", e - r + 1) });
+        while (e + 1 < ROWS && g[e + 1][c].g === v) e++;
+        if (e - s + 1 >= 3) out.push({ r: s, c, g: v, cells: range(s, c, "v", e - s + 1) });
         r = e + 1;
       }
     }
-    return runs;
+    return out;
   }
 
   function range(r, c, dir, len) {
     return Array.from({ length: len }, (_, i) => (dir === "h" ? [r, c + i] : [r + i, c]));
   }
 
+  function swapCells(a, b) {
+    const t = st.grid[a.r][a.c];
+    st.grid[a.r][a.c] = st.grid[b.r][b.c];
+    st.grid[b.r][b.c] = t;
+  }
+
   function hasMove() {
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
         if (c + 1 < COLS) {
-          swapData(r, c, r, c + 1);
-          const ok = findRuns().length > 0;
-          swapData(r, c, r, c + 1);
+          swapCells({ r, c }, { r, c: c + 1 });
+          const ok = runs().length > 0;
+          swapCells({ r, c }, { r, c: c + 1 });
           if (ok) return true;
         }
         if (r + 1 < ROWS) {
-          swapData(r, c, r + 1, c);
-          const ok = findRuns().length > 0;
-          swapData(r, c, r + 1, c);
+          swapCells({ r, c }, { r: r + 1, c });
+          const ok = runs().length > 0;
+          swapCells({ r, c }, { r: r + 1, c });
           if (ok) return true;
         }
       }
@@ -95,209 +95,296 @@ export function createBattle(opts) {
     return false;
   }
 
-  function swapData(r1, c1, r2, c2) {
-    const t = state.grid[r1][c1];
-    state.grid[r1][c1] = state.grid[r2][c2];
-    state.grid[r2][c2] = t;
-  }
-
-  /* ── 渲染 ── */
-  function tileHTML(v, r, c) {
-    const g = GEMS[v];
-    return `<button class="m3-tile" data-r="${r}" data-c="${c}" style="--gem:${g.color}">
-      <img src="${g.icon}" alt="${g.name}" draggable="false">
-    </button>`;
-  }
-
-  function paintBoard() {
-    const cells = [];
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) cells.push(tileHTML(state.grid[r][c], r, c));
-    }
-    const board = host.querySelector(".m3-board");
-    if (board) board.innerHTML = cells.join("");
-  }
-
-  function render() {
+  function mount() {
     host.innerHTML = `
-      <div class="m3-wrap">
-        <div class="m3-foe">
-          <div class="m3-avatar"><img src="${enemy.art}" alt="${enemy.name}"></div>
-          <div class="m3-foe-info">
-            <b>${enemy.name}</b>
-            <div class="hpbar foe"><i style="width:${(state.enemyHp / state.enemyMax) * 100}%"></i>
-              <span>${Math.max(0, state.enemyHp)}/${state.enemyMax}</span></div>
+      <div class="m3-scene">
+        <div class="m3-foe" id="m3Foe">
+          <div class="m3-portrait"><img src="${enemy.art}" alt="${enemy.name}"></div>
+          <div class="m3-foe-main">
+            <div class="m3-foe-name">${enemy.name}</div>
+            <div class="hpbar foe"><i></i><span></span></div>
           </div>
         </div>
-
-        <div class="m3-board" id="m3Board"></div>
-
-        <div class="m3-me">
-          <div class="hpbar me"><i style="width:${(state.playerHp / state.playerMax) * 100}%"></i>
-            <span>${Math.max(0, state.playerHp)}/${state.playerMax}</span></div>
-          <div class="m3-deck-row"><span class="hint">共鸣卡组</span><div class="m3-deck">
-            ${deck.map((d) => `<span class="m3-deck-card" title="${d.card.name} · ${d.element}">
-              <img src="../${d.card.fullArtImage}"><i>${d.element}</i></span>`).join("")}
-          </div></div>
+        <div class="m3-vs">⚔</div>
+        <div class="m3-party" id="m3Party">
+          <div class="m3-cards">
+            ${deck.map((d) => `<div class="m3-pcard" style="--e:${(GEMS.find((x) => x.name === d.element) || {}).color || "#fff"}">
+              <img src="../${d.card.fullArtImage}" alt="${d.card.name}">
+              <i>${d.element}</i></div>`).join("")}
+          </div>
+          <div class="hpbar me"><i></i><span></span></div>
         </div>
-        <div class="m3-hint" id="m3Hint">交换相邻宝石，凑够 3 个同色即可攻击</div>
-      </div>`;
-    paintBoard();
+      </div>
+      <div class="m3-boardwrap">
+        <div class="m3-board"><div class="m3-layer" id="m3Layer"></div></div>
+      </div>
+      <div class="m3-hint" id="m3Hint">拖动宝石交换，三个同色即可攻击</div>`;
+
+    el.layer = host.querySelector("#m3Layer");
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const t = st.grid[r][c];
+        const d = document.createElement("button");
+        d.className = "m3-tile";
+        d.dataset.id = t.id;
+        d.style.setProperty("--gem", GEMS[t.g].color);
+        d.innerHTML = `<img src="${GEMS[t.g].icon}" alt="" draggable="false">`;
+        el.layer.appendChild(d);
+        el[t.id] = d;
+        place(d, r, c, true);
+      }
+    }
+    paintHud();
+    bindInput();
   }
 
-  function updateHud() {
+  function place(node, r, c, instant) {
+    if (instant) node.style.transition = "none";
+    node.style.transform = `translate(${c * 100}%, ${r * 100}%)`;
+    node.dataset.r = r;
+    node.dataset.c = c;
+    if (instant) requestAnimationFrame(() => { node.style.transition = ""; });
+  }
+
+  function paintHud() {
     const foe = host.querySelector(".hpbar.foe");
     const me = host.querySelector(".hpbar.me");
     if (foe) {
-      foe.querySelector("i").style.width = Math.max(0, (state.enemyHp / state.enemyMax) * 100) + "%";
-      foe.querySelector("span").textContent = `${Math.max(0, state.enemyHp)}/${state.enemyMax}`;
+      foe.querySelector("i").style.width = Math.max(0, (st.enemyHp / st.enemyMax) * 100) + "%";
+      foe.querySelector("span").textContent = `${Math.max(0, st.enemyHp)} / ${st.enemyMax}`;
     }
     if (me) {
-      me.querySelector("i").style.width = Math.max(0, (state.playerHp / state.playerMax) * 100) + "%";
-      me.querySelector("span").textContent = `${Math.max(0, state.playerHp)}/${state.playerMax}`;
+      me.querySelector("i").style.width = Math.max(0, (st.playerHp / st.playerMax) * 100) + "%";
+      me.querySelector("span").textContent = `${Math.max(0, st.playerHp)} / ${st.playerMax}`;
     }
   }
 
-  function hint(msg) {
-    const el = host.querySelector("#m3Hint");
-    if (el) el.textContent = msg;
+  function hint(msg) { const h = host.querySelector("#m3Hint"); if (h) h.textContent = msg; }
+
+  function float(txt, cls) {
+    const d = document.createElement("div");
+    d.className = "m3-float " + (cls || "");
+    d.textContent = txt;
+    host.appendChild(d);
+    setTimeout(() => d.remove(), 950);
   }
 
-  function floatText(txt, cls) {
-    const el = document.createElement("div");
-    el.className = "m3-float " + (cls || "");
-    el.textContent = txt;
-    host.appendChild(el);
-    setTimeout(() => el.remove(), 900);
+  function shake(target) {
+    if (!target) return;
+    target.classList.remove("hit");
+    void target.offsetWidth;
+    target.classList.add("hit");
   }
 
-  /* ── 交互 ── */
-  host.addEventListener("click", async (e) => {
-    const t = e.target.closest(".m3-tile");
-    if (!t || state.busy || state.over) return;
-    const r = +t.dataset.r, c = +t.dataset.c;
-    if (!state.sel) {
-      state.sel = { r, c };
-      t.classList.add("on");
-      return;
-    }
-    const s = state.sel;
-    host.querySelectorAll(".m3-tile.on").forEach((x) => x.classList.remove("on"));
-    state.sel = null;
-    const adj = Math.abs(s.r - r) + Math.abs(s.c - c) === 1;
-    if (!adj) {
-      state.sel = { r, c };
-      t.classList.add("on");
-      return;
-    }
-    state.busy = true;
-    swapData(s.r, s.c, r, c);
-    paintBoard();
-    await WAIT(140);
-    if (!findRuns().length) {
-      swapData(s.r, s.c, r, c);
-      paintBoard();
-      hint("这样换不出三连");
-      state.busy = false;
-      return;
-    }
-    await resolveAll(r, c);
-    state.turns++;
-    // 敌方回合
-    if (!state.over) await enemyTurn();
-    state.busy = false;
-  });
+  function bindInput() {
+    let down = null;
 
-  /* ── 结算 ── */
-  async function resolveAll(swapR, swapC) {
-    state.combo = 0;
-    let totalDmg = 0;
+    host.addEventListener("pointerdown", (e) => {
+      if (st.busy || st.over) return;
+      const n = e.target.closest && e.target.closest(".m3-tile");
+      if (!n) return;
+      const r = +n.dataset.r, c = +n.dataset.c;
+      down = { r, c, x: e.clientX, y: e.clientY };
+
+      if (st.sel) {
+        const s = st.sel;
+        if (s.r === r && s.c === c) { clearSel(); down = null; return; }
+        if (Math.abs(s.r - r) + Math.abs(s.c - c) === 1) {
+          clearSel();
+          down = null;
+          trySwap(s, { r, c });
+          return;
+        }
+        clearSel();
+      }
+      setSel({ r, c }, n);
+    });
+
+    host.addEventListener("pointermove", (e) => {
+      if (!down || st.busy || st.over) return;
+      const dx = e.clientX - down.x, dy = e.clientY - down.y;
+      if (Math.hypot(dx, dy) < 16) return;
+      const first = host.querySelector(".m3-tile");
+      const cell = first ? first.getBoundingClientRect().width : 44;
+      let nr = down.r, nc = down.c;
+      if (Math.abs(dx) > Math.abs(dy)) nc += Math.sign(dx) * Math.max(1, Math.round(Math.abs(dx) / cell));
+      else nr += Math.sign(dy) * Math.max(1, Math.round(Math.abs(dy) / cell));
+      nr = Math.max(0, Math.min(ROWS - 1, nr));
+      nc = Math.max(0, Math.min(COLS - 1, nc));
+      if (nr === down.r && nc === down.c) return;
+      const from = { r: down.r, c: down.c };
+      down = null;
+      clearSel();
+      trySwap(from, { r: nr, c: nc });
+    });
+
+    const end = () => { down = null; };
+    host.addEventListener("pointerup", end);
+    host.addEventListener("pointercancel", end);
+  }
+
+  function setSel(pos, node) { st.sel = pos; node.classList.add("on"); }
+  function clearSel() {
+    st.sel = null;
+    host.querySelectorAll(".m3-tile.on").forEach((n) => n.classList.remove("on"));
+  }
+
+  async function trySwap(a, b) {
+    st.busy = true;
+    const A = st.grid[a.r][a.c], B = st.grid[b.r][b.c];
+    swapCells(a, b);
+    place(el[A.id], b.r, b.c);
+    place(el[B.id], a.r, a.c);
+    await WAIT(170);
+
+    if (!runs().length) {
+      swapCells(a, b);
+      place(el[A.id], a.r, a.c);
+      place(el[B.id], b.r, b.c);
+      [A, B].forEach((t) => {
+        const n = el[t.id];
+        n.classList.add("bad");
+        setTimeout(() => n.classList.remove("bad"), 340);
+      });
+      hint("这样换不出三连，换个方向试试");
+      st.busy = false;
+      return;
+    }
+
+    await resolveAll();
+    st.turns++;
+    if (!st.over) await enemyTurn();
+    st.busy = false;
+  }
+
+  async function resolveAll() {
+    st.combo = 0;
     while (true) {
-      const runs = findRuns();
-      if (!runs.length) break;
-      state.combo++;
+      const rs = runs();
+      if (!rs.length) break;
+      st.combo++;
+
       const cells = new Set();
-      const perGem = {};
-      for (const run of runs) for (const [r, c] of run.cells) {
-        cells.add(r * COLS + c);
-        perGem[state.grid[r][c]] = (perGem[state.grid[r][c]] || 0) + 1;
+      const per = {};
+      for (const run of rs) {
+        for (const [r, c] of run.cells) {
+          cells.add(r * COLS + c);
+          const g = st.grid[r][c].g;
+          per[g] = (per[g] || 0) + 1;
+        }
       }
 
-      // 伤害：基础 1 点/宝石，属性亲和 ×2，连击加成
       let dmg = 0;
-      for (const [gem, n] of Object.entries(perGem)) {
-        const g = GEMS[+gem];
-        const bonus = affinity[g.name] ? 2 : 1;
+      for (const [g, n] of Object.entries(per)) {
+        const gem = GEMS[+g];
+        const bonus = affinity[gem.name] ? 2 : 1;
         dmg += n * bonus;
-        if (affinity[g.name]) floatText(`${g.name}共鸣 +${n * 2}`, "crit");
+        if (affinity[gem.name]) float(`${gem.name}共鸣 +${n * 2}`, "crit");
       }
-      dmg = Math.round(dmg * (1 + 0.3 * (state.combo - 1)));
-      totalDmg += dmg;
+      dmg = Math.round(dmg * (1 + 0.3 * (st.combo - 1)));
 
-      // 播放消除
       for (const idx of cells) {
-        const el = host.querySelector(`.m3-tile[data-r="${Math.floor(idx / COLS)}"][data-c="${idx % COLS}"]`);
-        if (el) el.classList.add("pop");
+        const t = st.grid[(idx / COLS) | 0][idx % COLS];
+        if (t && el[t.id]) el[t.id].classList.add("pop");
       }
-      await WAIT(180);
-      for (const idx of cells) state.grid[Math.floor(idx / COLS)][idx % COLS] = null;
+      await WAIT(220);
 
-      state.enemyHp -= dmg;
-      updateHud();
-      if (state.combo > 1) hint(`连击 ×${state.combo}！造成 ${dmg} 伤害`);
-      else hint(`造成 ${dmg} 伤害`);
-      floatText(`-${dmg}`, "dmg");
+      for (const idx of cells) st.grid[(idx / COLS) | 0][idx % COLS] = null;
+
+      st.enemyHp -= dmg;
+      paintHud();
+      float(`-${dmg}`, "dmg");
+      shake(host.querySelector("#m3Foe"));
+      hint(st.combo > 1 ? `连击 ×${st.combo}！造成 ${dmg} 伤害` : `造成 ${dmg} 伤害`);
 
       collapse();
-      paintBoard();
-      await WAIT(180);
-      if (state.enemyHp <= 0) return finish(true);
+      await WAIT(210);
+
+      if (st.enemyHp <= 0) { finish(true); return; }
     }
-    if (!hasMove()) {
-      hint("没有可用的交换，重排棋盘");
-      makeGrid();
-      paintBoard();
-    }
-    return totalDmg;
+    if (!hasMove()) { hint("没有可交换的组合，重排棋盘"); await reshuffle(); }
   }
 
   function collapse() {
     for (let c = 0; c < COLS; c++) {
       let write = ROWS - 1;
       for (let r = ROWS - 1; r >= 0; r--) {
-        const v = state.grid[r][c];
-        if (v !== null) {
-          state.grid[write][c] = v;
-          if (write !== r) state.grid[r][c] = null;
+        const t = st.grid[r][c];
+        if (t) {
+          if (write !== r) {
+            st.grid[write][c] = t;
+            st.grid[r][c] = null;
+            place(el[t.id], write, c);
+          }
           write--;
         }
       }
-      for (let r = write; r >= 0; r--) state.grid[r][c] = rnd(N);
+      for (let r = write; r >= 0; r--) {
+        const t = mk();
+        st.grid[r][c] = t;
+        const node = document.createElement("button");
+        node.className = "m3-tile";
+        node.dataset.id = t.id;
+        node.style.setProperty("--gem", GEMS[t.g].color);
+        node.innerHTML = `<img src="${GEMS[t.g].icon}" alt="" draggable="false">`;
+        el.layer.appendChild(node);
+        el[t.id] = node;
+        node.style.transition = "none";
+        node.style.transform = `translate(${c * 100}%, ${(r - ROWS) * 100}%)`;
+        node.dataset.r = r;
+        node.dataset.c = c;
+        requestAnimationFrame(() => {
+          node.style.transition = "";
+          node.style.transform = `translate(${c * 100}%, ${r * 100}%)`;
+        });
+      }
     }
   }
 
+  async function reshuffle() {
+    const all = [];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) all.push(st.grid[r][c].g);
+    for (let i = all.length - 1; i > 0; i--) { const j = rnd(i + 1); [all[i], all[j]] = [all[j], all[i]]; }
+    let guard = 0;
+    do {
+      let i = 0;
+      for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+        const cellData = st.grid[r][c];
+        cellData.g = all[i++ % all.length];
+        const node = el[cellData.id];
+        node.style.setProperty("--gem", GEMS[cellData.g].color);
+        node.innerHTML = `<img src="${GEMS[cellData.g].icon}" alt="" draggable="false">`;
+      }
+      guard++;
+    } while ((runs().length || !hasMove()) && guard < 40);
+    await WAIT(300);
+  }
+
   async function enemyTurn() {
-    if (state.turns < 1) return;
     const dmg = enemy.atk + rnd(6);
-    state.playerHp -= dmg;
-    updateHud();
-    floatText(`-${dmg}`, "hurt");
+    st.playerHp -= dmg;
+    paintHud();
+    float(`-${dmg}`, "hurt");
+    shake(host.querySelector("#m3Party"));
     hint(`${enemy.name} 反击，造成 ${dmg} 伤害`);
-    await WAIT(420);
-    if (state.playerHp <= 0) finish(false);
+    await WAIT(430);
+    if (st.playerHp <= 0) finish(false);
   }
 
   let ended = false;
   function finish(win) {
     if (ended) return;
     ended = true;
-    state.over = true;
+    st.over = true;
     hint(win ? "🎉 战斗胜利" : "💥 战斗失败");
-    setTimeout(() => onEnd && onEnd({ win, turns: state.turns, hpLeft: Math.max(0, state.playerHp) }), 520);
+    if (win) {
+      const foe = host.querySelector("#m3Foe");
+      if (foe) foe.classList.add("down");
+    }
+    setTimeout(() => onEnd && onEnd({ win, turns: st.turns, hpLeft: Math.max(0, st.playerHp) }), 640);
   }
 
-  /* ── 启动 ── */
-  makeGrid();
-  render();
+  fresh();
+  mount();
   return { destroy() { host.innerHTML = ""; } };
 }
