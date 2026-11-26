@@ -1,0 +1,590 @@
+/* 卡包（从桌面版 styles.css 提取，保持原始渲染效果） */
+.packstage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  --pack-h: min(56vh, 430px);
+  --pack-w: calc(var(--pack-h) * 0.69);
+  --crimp-h: calc(var(--pack-h) * 0.068);
+  --pack-depth: 16px;
+  --pack-color: #3b2c63;
+  --pack-highlight: #b9a5f0;
+  --pack-shadow: #0a0714;
+  perspective: 1100px;
+}
+.scene { position: relative; width: var(--pack-w); height: var(--pack-h); transform-style: preserve-3d; }
+/* preserve-3d 里靠 Z 轴排序，抓取层必须推到正面之前 */
+.pack .grab-zone {
+  position: absolute; inset: -6% -10% 22%;
+  background: transparent; border: 0; padding: 0;
+  touch-action: none; cursor: grab;
+  transform: translateZ(60px);
+  z-index: 60;
+}
+.pack .pouch-face { pointer-events: none; }
+.pack .lip-shadow { position: absolute; inset: 0; pointer-events: none; }
+
+
+.pack, .card{
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.pack{
+  width: var(--pack-w);
+  height: var(--pack-h);
+  margin: calc(var(--pack-h) / -2) 0 0 calc(var(--pack-w) / -2);
+}
+
+.ground-shadow{
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--pack-w) * 1.02);
+  height: calc(var(--pack-w) * 0.2);
+  margin: calc(var(--pack-w) * -0.1) 0 0 calc(var(--pack-w) * -0.51);
+  border-radius: 50%;
+  background: var(--ground-shadow-bg);
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+/* ---------- 镀铝复合膜补充包（热压锯齿 + 激光易撕口 + 枕式金属漫反射） ---------- */ .pouch-face{
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(calc(var(--pack-depth) / 2));
+  --tooth-w: calc(var(--pack-w) / 28);
+  background:
+    var(--foil-shade, none) 0 0 / 100% 100%,
+    /* 上下热压封口内侧立体压痕亮线 */
+    linear-gradient(180deg, rgba(0, 0, 0, 0.42) 0 1px, rgba(255, 255, 255, 0.34) 1px 2px, transparent 3px) 0 var(--crimp-h) / 100% 5px no-repeat,
+    linear-gradient(0deg, rgba(0, 0, 0, 0.46) 0 1px, rgba(255, 255, 255, 0.26) 1px 2px, transparent 3px) 0 calc(100% - var(--crimp-h)) / 100% 5px no-repeat,
+    /* 上下封口精密金属压纹槽 */
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.34) 0 1.2px,
+      rgba(255, 255, 255, 0.22) 1.2px 2.4px,
+      rgba(0, 0, 0, 0.08) 2.4px 4.6px
+    ) 0 0 / 100% var(--crimp-h) no-repeat,
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.34) 0 1.2px,
+      rgba(255, 255, 255, 0.2) 1.2px 2.4px,
+      rgba(0, 0, 0, 0.08) 2.4px 4.6px
+    ) 0 100% / 100% var(--crimp-h) no-repeat,
+    /* 袋身左右弧面体积边缘光与暗部转折 */
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.36) 0%,
+      rgba(255, 255, 255, 0.24) 3.4%,
+      transparent 10%,
+      transparent 88%,
+      rgba(255, 255, 255, 0.12) 94.5%,
+      rgba(0, 0, 0, 0.44) 100%
+    ) 0 50% / 100% calc(100% - 2 * var(--crimp-h)) no-repeat,
+    /* 极细拉丝镀铝膜纵纹 */
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.026) 0 1px, transparent 1px 3px),
+    /* 枕式鼓包中心金属高光与四角收紧暗角 */
+    radial-gradient(
+      78% 56% at calc(44% + var(--glint-x, 0) * 3%) 47%,
+      color-mix(in srgb, var(--pack-highlight) 58%, #ffffff) 0%,
+      color-mix(in srgb, var(--pack-color) 82%, var(--pack-highlight)) 34%,
+      var(--pack-color) 68%,
+      var(--pack-shadow) 100%
+    );
+  /* 含两侧 y=11.4% 激光 V 型易撕缺口的包装袋轮廓遮罩 */
+  mask:
+    conic-gradient(from 135deg at 50% 0, transparent, #000 1deg 89deg, transparent 90deg) 0 0 / var(--tooth-w) calc(var(--tooth-w) / 2) repeat-x,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path d='M0 0H100V5.6C100 8 97.6 7.6 97.6 10V10.6L95.3 11.4L97.6 12.2V90C97.6 92.4 100 92 100 94.4V100H0V94.4C0 92 2.4 92.4 2.4 90V12.2L4.7 11.4L2.4 10.6V10C2.4 7.6 0 8 0 5.6Z'/></svg>") 0 50% / 100% calc(100% - var(--tooth-w)) no-repeat,
+    conic-gradient(from -45deg at 50% 100%, transparent, #000 1deg 89deg, transparent 90deg) 0 100% / var(--tooth-w) calc(var(--tooth-w) / 2) repeat-x;
+}
+
+.pouch-face.back{
+  transform: rotateY(180deg) translateZ(calc(var(--pack-depth) / 2));
+}
+
+.pouch-face::before, .pouch-face::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* 随倾角游走的宽幅金属镜面反光带 */ .pouch-face::before{
+  background: linear-gradient(
+    108deg,
+    transparent 16%,
+    rgba(255, 255, 255, 0.08) 28%,
+    rgba(255, 255, 255, 0.34) 36%,
+    rgba(255, 255, 255, 0.08) 44%,
+    transparent 56%
+  );
+  mask: linear-gradient(transparent 6%, #000 13% 87%, transparent 94%);
+  translate: calc(var(--glint-x, 0) * 6%) 0;
+  opacity: var(--glint-op, 0.82);
+  mix-blend-mode: soft-light;
+}
+
+.pouch-face::after{
+  background: var(--foil-shine, none) 0 0 / 100% 100%;
+  opacity: var(--shine-op, 0.88);
+  mask: linear-gradient(90deg, rgba(0, 0, 0, 0.45), #000 40% 60%, rgba(0, 0, 0, 0.45)) calc(var(--shine-pos, 50) * 1%) 0 / 250% 100%;
+}
+
+/* 欧皇全闪包：黑金幻彩镀膜外袋 */ .pack.god-pack .pouch-face{
+  background:
+    var(--foil-shade, none) 0 0 / 100% 100%,
+    linear-gradient(180deg, rgba(0, 0, 0, 0.45) 0 1px, rgba(255, 232, 160, 0.5) 1px 2px, transparent 3px) 0 var(--crimp-h) / 100% 5px no-repeat,
+    linear-gradient(0deg, rgba(0, 0, 0, 0.48) 0 1px, rgba(255, 232, 160, 0.4) 1px 2px, transparent 3px) 0 calc(100% - var(--crimp-h)) / 100% 5px no-repeat,
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.38) 0 1.2px, rgba(255, 226, 138, 0.32) 1.2px 2.4px, transparent 2.4px 4.6px) 0 0 / 100% var(--crimp-h) no-repeat,
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.38) 0 1.2px, rgba(255, 226, 138, 0.32) 1.2px 2.4px, transparent 2.4px 4.6px) 0 100% / 100% var(--crimp-h) no-repeat,
+    linear-gradient(128deg, rgba(255, 218, 106, 0.45) 0%, rgba(255, 108, 214, 0.25) 38%, rgba(92, 224, 255, 0.28) 68%, rgba(255, 214, 102, 0.5) 100%),
+    radial-gradient(80% 58% at 45% 46%, #3d3159 0%, #1c172e 58%, #0b0914 100%);
+}
+
+.gusset-slice{
+  position: absolute;
+}
+
+/* ---------- 袋口彩虹喷流 ---------- */ .jet-anchor{
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--pack-w);
+  height: var(--pack-h);
+  margin: calc(var(--pack-h) / -2) 0 0 calc(var(--pack-w) / -2);
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+
+.light-jet{
+  position: absolute;
+  left: 0;
+  width: 100%;
+  top: calc(10.5% - var(--pack-w) * 0.6);
+  height: calc(var(--pack-w) * 0.76);
+  overflow: visible;
+  opacity: 0;
+  transform: translateZ(-6px);
+}
+
+/* ---------- 补充包工业级烫金/丝印版式 ---------- */ .tear-label{
+  position: absolute;
+  left: 8.5%;
+  right: 8.5%;
+  top: calc(var(--crimp-h) + 1.1%);
+  font: 700 calc(var(--pack-w) * 0.028) / 1 system-ui, sans-serif;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.82);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.tear-guide{
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  top: 11.4%;
+  height: 1px;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.52) 0 4px, transparent 4px 7px);
+}
+
+/* 袋面金属内框（位于 y=20.2% 以下，避开顶部动态撕裂带） */ .pouch-foil-frame{
+  position: absolute;
+  left: 7.5%;
+  right: 7.5%;
+  top: 20.2%;
+  bottom: calc(var(--crimp-h) + 2.8%);
+  border-radius: calc(var(--pack-w) * 0.032);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, transparent 26%, rgba(0, 0, 0, 0.18) 100%);
+  pointer-events: none;
+}
+
+.pouch-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6.5% 7% 0;
+}
+
+.brand-mark{
+  font: 800 calc(var(--pack-w) * 0.105) / 0.95 -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #ffffff 15%, rgba(230, 238, 255, 0.82) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.32));
+}
+
+.edition-tag{
+  padding: calc(var(--pack-w) * 0.014) calc(var(--pack-w) * 0.028);
+  border-radius: 99px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  background: rgba(8, 12, 28, 0.34);
+  font: 700 calc(var(--pack-w) * 0.027) / 1 system-ui, sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
+  font-variant-numeric: tabular-nums;
+}
+
+.pack.god-pack .edition-tag{
+  border-color: rgba(255, 218, 118, 0.72);
+  background: rgba(34, 24, 8, 0.62);
+  color: #ffe699;
+}
+
+/* 吉祥物背后的精密星轨金属环，让角色融于包装主视觉 */ .pouch-halo-ring{
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: 74%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    inset 0 0 22px rgba(255, 255, 255, 0.12),
+    0 0 0 5px rgba(255, 255, 255, 0.04);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.16) 0%, transparent 68%);
+}
+
+.pouch-footer{
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: calc(var(--crimp-h) + 4.6%);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--pack-w) * 0.016);
+  pointer-events: none;
+}
+
+.pouch-foot-row{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: calc(var(--pack-w) * 0.015);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.pack-foot{
+  font: 700 calc(var(--pack-w) * 0.031) / 1 system-ui, sans-serif;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.pack-micro-spec{
+  font: 600 calc(var(--pack-w) * 0.023) / 1 system-ui, sans-serif;
+  letter-spacing: 0.15em;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+/* ---------- 12 段卷曲封条与金属撕裂断茬 ---------- */ .tear-flap{
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  visibility: hidden;
+}
+
+.tear-flap.visible{
+  visibility: visible;
+}
+
+.strip-segment{
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform-origin: 0 0;
+}
+
+.strip-segment .front{
+  transform: translateZ(0.45px);
+}
+
+.pouch-face.foil-lining{
+  transform: rotateY(180deg) translateZ(0.45px);
+  background: linear-gradient(
+    97deg,
+    #dde4f0,
+    #ffffff 13%,
+    #c3cde0 27%,
+    #ffffff 45%,
+    #d5deed 59%,
+    #ffffff 77%,
+    #c9d4e6
+  );
+}
+
+.pouch-face.foil-lining::before, .pouch-face.foil-lining::after{
+  display: none;
+}
+
+.curl-shade{
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: #080a16;
+  opacity: 0;
+}
+
+.lip-shadow{
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  filter: drop-shadow(0 1.5px 1.4px rgba(0, 0, 0, 0.48));
+}
+
+.foil-lip{
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  clip-path: polygon(0 0);
+  background: linear-gradient(
+    100deg,
+    #f3f6fb,
+    #ffffff 14%,
+    #b8c2d6 28%,
+    #ffffff 43%,
+    #c5cfe2 58%,
+    #fcfdff 73%,
+    #b2bdd1 87%,
+    #eef1f7
+  );
+}
+
+.pack.tearing .grab-zone, .pack.tugging .grab-zone{
+  cursor: grabbing;
+}
+
+/* 封面徽记（纯 SVG） */ .pack-crest{
+  position: absolute;
+  inset: 8% 6%;
+  width: 88%;
+  height: 84%;
+  opacity: 0.94;
+  transform: scale(0.92);
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.45));
+  animation: crestFloat 6s ease-in-out infinite;
+}
+
+/* ---- 补充包：羊皮纸 + 旧金 + 火漆 ---- */ .pouch-face{
+  background:
+    /* 纸纤维 */
+    repeating-linear-gradient(98deg, rgba(96, 72, 40, 0.05) 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(14deg, rgba(96, 72, 40, 0.038) 0 1px, transparent 1px 7px),
+    /* 主题色晕染 */
+    radial-gradient(120% 78% at 50% -6%, color-mix(in srgb, var(--pack-color) 42%, transparent), transparent 64%),
+    /* 上下封口压痕 */
+    linear-gradient(180deg, rgba(66, 44, 16, 0.34) 0 1px, rgba(255, 246, 214, 0.5) 1px 2px, transparent 3px) 0 var(--crimp-h) / 100% 5px no-repeat,
+    linear-gradient(0deg, rgba(66, 44, 16, 0.38) 0 1px, rgba(255, 246, 214, 0.42) 1px 2px, transparent 3px) 0 calc(100% - var(--crimp-h)) / 100% 5px no-repeat,
+    /* 两侧弧面 */
+    linear-gradient(90deg,
+      rgba(74, 52, 22, 0.42) 0%, rgba(255, 246, 214, 0.34) 3.6%, transparent 11%,
+      transparent 87%, rgba(255, 246, 214, 0.18) 94.4%, rgba(74, 52, 22, 0.46) 100%) 0 50% / 100% calc(100% - 2 * var(--crimp-h)) no-repeat,
+    /* 纸面明暗（老化羊皮：中心亮、边缘深） */
+    radial-gradient(84% 62% at 44% 42%, #f2e3c0 0%, #e2cda2 38%, #c4a878 70%, #96794f 100%);
+  box-shadow: inset 0 0 42px rgba(88, 60, 24, 0.28);
+}
+
+.pouch-face::before{ opacity: 0.35; mix-blend-mode: soft-light; }
+
+.pouch-face::after{ opacity: 0.24; mix-blend-mode: overlay; }
+
+/* 金色内框 + 角花 */ .pouch-foil-frame{
+  border: 1.5px solid rgba(168, 129, 58, 0.75);
+  border-radius: 3px;
+  box-shadow:
+    0 0 0 1px rgba(255, 240, 200, 0.35) inset,
+    0 0 18px rgba(200, 158, 78, 0.28);
+  background: linear-gradient(180deg, rgba(255, 246, 214, 0.16), rgba(120, 88, 36, 0.10));
+}
+
+.pouch-foil-frame::before, .pouch-foil-frame::after{
+  content: "";
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  border: 1.5px solid rgba(168, 129, 58, 0.9);
+  border-radius: 2px;
+  opacity: 0.9;
+}
+
+.pouch-foil-frame::before{ left: 5px; top: 5px; border-right: 0; border-bottom: 0; }
+
+.pouch-foil-frame::after{ right: 5px; bottom: 5px; border-left: 0; border-top: 0; }
+
+.brand-mark{
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  background: linear-gradient(180deg, #fff6da 8%, #e8c478 52%, #a8813a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 1px 0 rgba(60, 40, 12, 0.55)) drop-shadow(0 3px 8px rgba(0, 0, 0, 0.35));
+}
+
+.edition-tag{
+  font-family: var(--font-ui);
+  color: #f6ecd2;
+  letter-spacing: 0.14em;
+  background: linear-gradient(180deg, rgba(94, 46, 26, 0.92), rgba(58, 26, 14, 0.94));
+  border: 1px solid rgba(217, 178, 95, 0.6);
+  box-shadow: inset 0 1px 0 rgba(255, 226, 170, 0.3);
+  border-radius: 2px;
+}
+
+.tear-label{
+  font-family: var(--font-ui);
+  color: #f2e2b8;
+  letter-spacing: 0.22em;
+  font-size: calc(var(--pack-w) * 0.032);
+  text-shadow: 0 1px 2px rgba(40, 24, 6, 0.7);
+}
+
+.pouch-footer .pack-foot, .pack-micro-spec{
+  font-family: var(--font-ui);
+  color: rgba(58, 40, 14, 0.82);
+  letter-spacing: 0.12em;
+}
+
+.pack-micro-spec{ color: rgba(72, 50, 18, 0.68); }
+
+/* 火漆封印 */ .wax-seal{
+  position: absolute;
+  left: 50%;
+  top: 76.5%;
+  width: calc(var(--pack-w) * 0.132);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font: 700 calc(var(--pack-w) * 0.072) / 1 var(--font-display);
+  color: #ffeec8;
+  background:
+    radial-gradient(circle at 36% 30%, rgba(255, 190, 170, 0.55), transparent 46%),
+    radial-gradient(circle at 50% 52%, #a03535 0%, #7d2222 58%, #4f1010 100%);
+  box-shadow:
+    0 3px 8px rgba(40, 8, 8, 0.55),
+    inset 0 1px 2px rgba(255, 214, 190, 0.42),
+    inset 0 -2px 4px rgba(40, 6, 6, 0.5);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.wax-seal::after{
+  content: "";
+  position: absolute;
+  inset: 12%;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 224, 190, 0.5);
+}
+
+/* 侧边折裥：羊皮纸的明暗关系（覆盖内联的金属箔配色） */ .gusset-slice{
+  background: linear-gradient(90deg,
+    rgba(96, 70, 34, 0.55) 0%,
+    rgba(246, 232, 198, 0.42) 34%,
+    rgba(150, 118, 66, 0.42) 100%) !important;
+  opacity: 0.9;
+}
+
+/* 光流：叠加混合 + 暖色提亮，让缎带像真的发光而不是色块 */ .light-jet{
+  mix-blend-mode: screen;
+  filter: saturate(1.08) brightness(1.06);
+}
+
+.jet-core{ mix-blend-mode: screen; }
+/* 移动端补充：舞台容器 + 光流爆发 */
+.packhost {
+  width: 100%;
+  height: min(58vh, 460px);
+  padding-top: 46px;
+  overflow: visible;
+  display: grid;
+  place-items: center;
+  perspective: 1100px;
+  touch-action: none;
+}
+
+.jet-burst {
+  position: absolute; left: 50%; top: 12%;
+  width: 220%; aspect-ratio: 1;
+  margin-left: -110%;
+  border-radius: 50%;
+  opacity: 0; pointer-events: none;
+  transform: scale(0.2);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,.95) 0%, rgba(255,244,210,.7) 12%, rgba(255,220,150,.35) 30%, transparent 58%),
+    conic-gradient(from 0deg at 50% 50%,
+      rgba(255,240,200,.5) 0 3deg, transparent 3deg 12deg,
+      rgba(200,240,255,.45) 12deg 15deg, transparent 15deg 26deg,
+      rgba(255,190,240,.45) 26deg 29deg, transparent 29deg 40deg);
+  filter: blur(1.5px);
+  mix-blend-mode: screen;
+}
+.jet-burst.on {
+  animation: jetOut 1.15s cubic-bezier(.2,.8,.3,1) forwards;
+}
+@keyframes jetOut {
+  0% { opacity: 0; transform: scale(0.15); }
+  18% { opacity: 1; transform: scale(0.5); }
+  60% { opacity: .85; transform: scale(1.05); }
+  100% { opacity: 0; transform: scale(1.5); }
+}
+
+.pack.opened { transition: transform .5s, opacity .5s; }
+.pack-crest {
+  position: absolute; left: 50%; top: 34%;
+  transform: translateX(-50%);
+  font-size: calc(var(--pack-w) * 0.22);
+  color: rgba(255, 245, 220, 0.9);
+  text-shadow: 0 0 18px rgba(255, 230, 160, 0.85), 0 2px 6px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+/* 光流：32 道缎带自袋口喷出 */
+.light-jet {
+  position: absolute;
+  left: 0; width: 100%;
+  top: calc(10.5% - var(--pack-w) * 0.34);
+  height: calc(var(--pack-w) * 0.52);
+  overflow: visible;
+  opacity: 0;
+  transform: translateZ(-6px);
+  pointer-events: none;
+}
+.light-jet.on { opacity: 0.96; }
+.light-jet .jet-rib {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  transform: scaleY(0.12) scaleX(0.5);
+}
+.light-jet.on .jet-rib {
+  animation: jetRise 1.35s cubic-bezier(.15,.85,.3,1) forwards;
+  animation-delay: var(--d, 0s);
+}
+@keyframes jetRise {
+  0%   { opacity: 0; transform: scaleY(0.08) scaleX(0.5); }
+  14%  { opacity: 1; transform: scaleY(0.62) scaleX(0.9); }
+  34%  { opacity: 1; transform: scaleY(1) scaleX(1.02); }
+  72%  { opacity: .95; transform: scaleY(1.06) scaleX(1.06); }
+  100% { opacity: 0; transform: scaleY(1.16) scaleX(1.12); }
+}

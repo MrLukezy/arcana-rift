@@ -290,3 +290,35 @@ text-shadow:
 - 无解时原地重排并刷新每格图样
 
 这样每一帧都是连续的位移，而不是瞬间跳变。
+
+## 第六轮：撕卡包（移植桌面版真实撕裂）
+
+移动版一开始把撕包做成了「拖动填进度条 + 卡包淡出」，完全丢掉了桌面版的撕扯手感。
+现在把桌面版的撕裂几何移植了过来：
+
+### 结构
+
+- `.pouch-face` 正反两片镀铝复合膜 + 热压锯齿（`mask` 里的 conic-gradient 齿）+ 激光 V 型易撕缺口
+- `.tear-flap` 里 8～10 段 `.strip-segment`，每段两个面（正面 + 内衬锡箔）
+- `.light-jet` 32 道 SVG 缎带，从撕裂口喷出
+
+### 撕裂算法（与桌面版同一套）
+
+1. `generateTearLine()` 生成 **97 个顶点**：随机斜率 + 拱形 + 正弦波动 + 布朗漂移 +
+   微观锯齿 + 随机唇宽
+2. 手指横向拖动 → `st.target` → `updateTearClips(p)`：
+   - 袋身用 `clip-path: polygon()` 挖掉已撕开的月牙
+   - 只在裂缝左侧/右侧的那几段 `.strip-segment` 显示，各自 `clip-path` 取自己那段
+   - 封条按 `translateX/rotateY/rotateZ` 链式**卷曲**，越远越卷，带正弦抖动
+3. 松手超过 54% 自动撕完；裂缝上还有 `steerRemainingTear()` 让撕裂线跟着手指上下拐弯
+
+### 光流
+
+撕开后 32 道缎带用 `scaleY` 从袋口炸开（1.35s，逐道 8ms 错峰），
+底部白热、中段彩虹、顶端转镭射色淡出，配合椭圆白热核心。
+
+### 踩到的坑
+
+- `preserve-3d` 里元素按 **Z 轴**排序，抓取层 `translateZ(60px)` 才收得到 pointerdown
+- 位移必须用**累计值**（`e.clientX - 初始 x0`），一旦重置 `x0` 进度永远为 0
+- `.result-card img { width:100% }` 会把卡内的金币图标撑爆 → 改成 `.result-card > img`

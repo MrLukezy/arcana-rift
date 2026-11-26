@@ -2,6 +2,7 @@
 import { CARD_POOL } from "../src/cards-config.js";
 import { createBattle } from "./battle3.js";
 import { cardHTML, bindHolo } from "./card3d.js";
+import { mountPack } from "./pack.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -348,73 +349,19 @@ function viewPack() {
   const free = S.free.n > 0;
   return `
   <div class="pack-stage">
-    <div class="pack-hint">${free ? "手指横着一划 · <b>撕开卡包</b>" : `免费卡包 ${fmt(freeLeftMs())} 后到账`}</div>
-    <div class="tear-wrap ${packState.charge ? "charged" : ""}" id="tearWrap">
-      <div class="pack-halo"></div>
-      <div class="pack-skin ${packState.torn ? "torn" : ""}" id="packSkin">
-        <img src="../img/ui/pack_front.webp" alt="卡包" draggable="false">
-        <div class="tear-progress"><i id="tearBar"></i></div>
-      </div>
-    </div>
-    <div style="margin-top:18px">
+    <div class="pack-hint">${free ? "按住封条横向<b>扯开</b>" : `免费卡包 ${fmt(freeLeftMs())} 后到账`}</div>
+    <div class="packhost" id="packHost"></div>
+    <div style="margin-top:10px">
       <button class="btn" id="buyPack" ${S.coins >= 180 ? "" : "disabled"}>花 180 金币买一包</button>
       <div class="hint" style="margin-top:8px">免费包每 ${FREE_MS / 60000} 分钟 +1，最多存 ${FREE_MAX} 个</div>
     </div>
   </div>`;
 }
 
-function bindTear() {
-  const wrap = $("#tearWrap");
-  const skin = $("#packSkin");
-  const bar = $("#tearBar");
-  if (!wrap || !skin) return;
-  if (S.free.n <= 0 && !packState.paid) { return; }
-
-  let drag = null, prog = 0;
-
-  const onDown = (e) => {
-    const t = e.touches ? e.touches[0] : e;
-    drag = { x: t.clientX, start: prog };
-    skin.style.transition = "none";
-  };
-  const onMove = (e) => {
-    if (!drag) return;
-    const t = e.touches ? e.touches[0] : e;
-    const dx = Math.abs(t.clientX - drag.x);
-    prog = Math.min(1, drag.start + dx / (wrap.clientWidth * 0.85));
-    bar.style.width = prog * 100 + "%";
-    skin.style.transform = `translateX(${(prog * 6).toFixed(1)}%) rotateZ(${prog * 1.2}deg)`;
-    wrap.classList.toggle("charged", prog > 0.45);
-    if (prog >= 1) finishTear();
-    if (e.cancelable) e.preventDefault();
-  };
-  const onUp = () => {
-    if (!drag) return;
-    drag = null;
-    skin.style.transition = "transform .25s";
-    if (prog < 1) {
-      prog = Math.max(0, prog - 0.22);
-      bar.style.width = prog * 100 + "%";
-      skin.style.transform = "";
-      wrap.classList.toggle("charged", prog > 0.45);
-      if (prog < 0.05) prog = 0;
-    }
-  };
-
-  wrap.addEventListener("touchstart", onDown, { passive: true });
-  wrap.addEventListener("touchmove", onMove, { passive: false });
-  wrap.addEventListener("touchend", onUp);
-  wrap.addEventListener("mousedown", onDown);
-  window.addEventListener("mousemove", onMove);
-  window.addEventListener("mouseup", onUp);
-}
-
 function finishTear() {
   if (packState.opening) return;
   packState.opening = true;
   packState.torn = true;
-  const skin = $("#packSkin");
-  if (skin) { skin.style.transform = ""; skin.classList.add("torn"); }
   S.tasks.opened += 1;
   if (S.free.n > 0 && !packState.paid) {
     S.free.n -= 1;
@@ -437,6 +384,7 @@ function finishTear() {
 }
 
 /* ───────── 对战（三消） ───────── */
+let packInst = null;
 let fightMode = "setup";
 let battleInst = null;
 
@@ -629,7 +577,12 @@ function render() {
   const html = VIEWS[tab]();
   $("#view").innerHTML = html;
   $$(".tab").forEach((b) => b.classList.toggle("on", b.dataset.tab === tab));
-  if (tab === "pack") bindTear();
+  if (tab === "pack") {
+    if (packInst) { packInst.destroy(); packInst = null; }
+    if (!packState.results.length && $("#packHost")) {
+      packInst = mountPack($("#packHost"), { onOpen: finishTear });
+    }
+  }
   bindHolo(document);
   if (tab === "home") startClock();
 }
