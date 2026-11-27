@@ -1,6 +1,7 @@
 /* 星界盟约 · 店长（移动端） */
 import { CARD_POOL } from "../src/cards-config.js";
 import { createBattle } from "./battle3.js";
+import { pickEnemy } from "./enemies.js";
 import { cardHTML, bindHolo, startTilt, stopTilt } from "./card3d.js";
 import { mountPack } from "./pack.js";
 import { createSoundController } from "./sound.js";
@@ -429,18 +430,7 @@ let fightMode = "setup";
 let battleInst = null;
 
 function makeEnemy() {
-  // 从 SR 以上里挑一个当对手
-  const pool = CARD_POOL.filter((c) => ORDER.indexOf(c.rarity) >= 2);
-  const c = pool[Math.floor(Math.random() * pool.length)];
-  const r = RARITY[c.rarity];
-  return {
-    card: c,
-    name: c.name,
-    art: `../${c.fullArtImage}`,
-    artChar: `../${c.artChar}`,
-    hp: 110 + r.power * 3 + Math.floor(Math.random() * 40),
-    atk: 6 + Math.round(r.power / 3),
-  };
+  return pickEnemy(S.fightLog.filter((l) => l.includes("胜利")).length);
 }
 
 function viewFight() {

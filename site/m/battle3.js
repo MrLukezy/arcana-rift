@@ -20,10 +20,23 @@ export function createBattle(opts) {
   const affinity = {};
   for (const d of deck) affinity[d.element] = (affinity[d.element] || 0) + 1;
 
+  /* 角色与装备结算：角色卡定基础，道具卡当装备叠属性 */
+  const hero = deck.find((d) => d.card.kind === "char") || deck[0];
+  let atk = 10 + Math.round(hero.power * 0.9);
+  let hp = 70 + Math.round(hero.power * 1.2);
+  const equips = deck.filter((d) => d !== hero);
+  for (const e of equips) {
+    atk += Math.round(e.power * 0.45);
+    hp += Math.round(e.power * 0.7);
+  }
+
+  const MOVES = 3;   // 每回合行动次数
+
   let uid = 1;
   const st = {
     grid: [], busy: false, sel: null, combo: 0,
-    playerHp: 70 + deck.length * 22,
+    playerHp: hp, atk: atk,
+    moves: MOVES, turn: "player", round: 1,
     enemyHp: enemy.hp, enemyMax: enemy.hp,
     turns: 0, over: false,
   };
@@ -103,14 +116,16 @@ export function createBattle(opts) {
           <div class="m3-portrait"><img src="../${heroCard.artChar}" alt="${heroCard.name}" draggable="false"></div>
           <div class="m3-name">${heroCard.name}</div>
           <div class="hpbar me"><i></i><span></span></div>
+          <div class="m3-stat">攻 ${atk}${equips.length ? ` · 装备 ×${equips.length}` : ""}</div>
         </div>
         <div class="m3-clash">⚔</div>
         <div class="m3-side foe" id="m3Foe">
-          <div class="m3-portrait"><img src="${enemy.artChar}" alt="${enemy.name}" draggable="false"></div>
+          <div class="m3-portrait"><img src="${enemy.art}" alt="${enemy.name}" draggable="false"></div>
           <div class="m3-name foe">${enemy.name}</div>
           <div class="hpbar foe"><i></i><span></span></div>
         </div>
       </div>
+      <div class="m3-turn" id="m3Turn"><b>你的回合</b><span>剩余 3 步</span></div>
       <div class="m3-boardwrap">
         <div class="m3-board"><div class="m3-layer" id="m3Layer"></div></div>
       </div>
@@ -131,6 +146,7 @@ export function createBattle(opts) {
       }
     }
     paintHud();
+    paintTurn();
     bindInput();
   }
 
@@ -273,7 +289,18 @@ export function createBattle(opts) {
 
     await resolveAll();
     st.turns++;
-    if (!st.over) await enemyTurn();
+    st.moves -= 1;
+    paintTurn();
+    if (st.over) { st.busy = false; return; }
+    if (st.moves <= 0) {
+      await enemyTurn();
+      if (st.over) { st.busy = false; return; }
+      st.round += 1;
+      st.moves = MOVES;
+      st.turn = "player";
+      paintTurn();
+      hint("你的回合，再走 3 步");
+    }
     st.busy = false;
   }
 
@@ -294,16 +321,19 @@ export function createBattle(opts) {
         }
       }
 
-      let dmg = 0;
+      let units = 0, equipMul = 0;
       let mainGem = GEMS[0], mainN = 0;
       for (const [g, n] of Object.entries(per)) {
         const gem = GEMS[+g];
         const bonus = affinity[gem.name] ? 2 : 1;
-        dmg += n * bonus;
+        units += n * bonus;
+        if (affinity[gem.name]) equipMul += n * 0.15;
         if (n > mainN) { mainN = n; mainGem = gem; }
-        if (affinity[gem.name]) float(`${gem.name}共鸣 +${n * 2}`, "crit");
+        if (affinity[gem.name]) float(`${gem.name}共鸣 ×2`, "crit");
       }
-      dmg = Math.round(dmg * (1 + 0.3 * (st.combo - 1)));
+      // 伤害 = 消除量 × (攻击力 / 40) × 装备加成 × 连击
+      const combo = 1 + 0.3 * (st.combo - 1);
+      const dmg = Math.max(1, Math.round(units * (st.atk / 40) * (1 + equipMul) * combo));
       fly(mainGem.color, true);
 
       for (const idx of cells) {
@@ -383,15 +413,29 @@ export function createBattle(opts) {
     await WAIT(300);
   }
 
+  function paintTurn() {
+    const box = host.querySelector("#m3Turn");
+    if (!box) return;
+    const mine = st.turn === "player";
+    box.classList.toggle("foe", !mine);
+    box.innerHTML = mine
+      ? `<b>你的回合</b><span>剩余 ${st.moves} 步</span>`
+      : `<b>敌方回合</b><span>${enemy.name} 行动中</span>`;
+  }
+
   async function enemyTurn() {
+    st.turn = "enemy";
+    paintTurn();
+    hint(`${enemy.name} 正在积蓄力量…`);
+    await WAIT(520);
     const dmg = enemy.atk + rnd(6);
     fly("#ff6b6b", false);
     st.playerHp -= dmg;
     paintHud();
     float(`-${dmg}`, "hurt");
-    shake(host.querySelector("#m3Party"));
-    hint(`${enemy.name} 反击，造成 ${dmg} 伤害`);
-    await WAIT(430);
+    shake(host.querySelector("#m3Hero"));
+    hint(`${enemy.name} 攻击，造成 ${dmg} 伤害`);
+    await WAIT(520);
     if (st.playerHp <= 0) finish(false);
   }
 
