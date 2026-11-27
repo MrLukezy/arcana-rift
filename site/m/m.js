@@ -194,7 +194,26 @@ function viewHome() {
 
   const unread = S.mail.filter((m) => !m.got).length;
 
+  // 英雄区展示三张最稀有的卡
+  let showcase = [...bagList()]
+    .map((id) => byId.get(id))
+    .sort((a, b) => ORDER.indexOf(b.rarity) - ORDER.indexOf(a.rarity))
+    .slice(0, 3);
+  if (!showcase.length) {
+    showcase = CARD_POOL.filter((c) => ORDER.indexOf(c.rarity) >= 3).slice(3, 6);
+  }
+
   return `
+  <div class="hero">
+    <div class="hero-title">星界盟约</div>
+    <div class="hero-sub">ARCANA RIFT · 卡牌店长</div>
+    <div class="hero-cards">
+      ${showcase.length
+        ? showcase.map((c) => cardHTML(c, { power: pickPower(c.id) })).join("")
+        : [1, 2, 3].map(() => `<div class="hero-phantom"></div>`).join("")}
+    </div>
+  </div>
+
   <div class="grid2">
     <div class="tile gift">
       <div class="tile-head"><img src="../img/ui/icon_pack.webp" alt=""><div class="tile-title">免费卡包</div></div>
@@ -575,6 +594,10 @@ const VIEWS = {
   pack: viewPack,
   fight: viewFight,
   trade: viewTrade,
+};
+
+const TAB_BG = {
+  home: "bg_shop", bag: "bg_shop", pack: "bg_crystal", fight: "bg_sky", trade: "bg_sky",
 };
 
 function render() {
