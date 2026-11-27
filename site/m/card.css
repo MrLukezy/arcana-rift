@@ -77,7 +77,7 @@
 .mcard.r-common .mc-holo,
 .mcard.r-rare .mc-holo {
   mix-blend-mode: soft-light;
-  opacity: calc(0.45 + var(--hyp) * 0.3);
+  opacity: calc(0.2 + var(--hyp) * 0.22);
 }
 
 /* 稀有度越高，镭射越张扬 */

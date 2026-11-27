@@ -96,20 +96,51 @@ export function bindHolo(root = document) {
   });
 }
 
-/* 设备倾斜（可选）：让整屏卡片跟着手机轻微动 */
-export function bindDeviceTilt() {
-  if (pushed.has("devicemotion")) return;
-  pushed.add("devicemotion");
-  const handler = (e) => {
-    const g = e.gamma || 0;   // 左右 -90..90
-    const b = e.beta || 0;    // 前后
-    const px = 50 + Math.max(-40, Math.min(40, g * 1.1));
-    const py = 50 + Math.max(-40, Math.min(40, (b - 40) * 0.7));
-    document.querySelectorAll(".mcard").forEach((el) => {
-      el.style.setProperty("--px", px.toFixed(1));
-      el.style.setProperty("--py", py.toFixed(1));
-      el.style.setProperty("--hyp", "0.35");
-    });
-  };
-  window.addEventListener("devicemotion", handler, { passive: true });
+/* 设备倾斜：手机拿起来晃动时，卡面光斑跟着走 */
+let tiltBound = false;
+let tiltOn = false;
+
+export function tiltSupported() {
+  return typeof window.DeviceOrientationEvent !== "undefined";
+}
+
+export async function startTilt() {
+  if (tiltOn || !tiltSupported()) return false;
+  const DOE = window.DeviceOrientationEvent;
+  if (typeof DOE.requestPermission === "function") {
+    try {
+      const res = await DOE.requestPermission();
+      if (res !== "granted") return false;
+    } catch {
+      return false;
+    }
+  }
+  if (!tiltBound) {
+    tiltBound = true;
+    window.addEventListener("deviceorientation", onOrient, { passive: true });
+  }
+  tiltOn = true;
+  return true;
+}
+
+export function stopTilt() {
+  tiltOn = false;
+}
+
+function onOrient(e) {
+  if (!tiltOn) return;
+  if (e.gamma == null && e.beta == null) return;
+  const g = Math.max(-45, Math.min(45, e.gamma || 0));   // 左右倾斜
+  const b = Math.max(-45, Math.min(45, (e.beta || 0) - 40)); // 前后俯仰
+  const px = 50 + g * 1.15;
+  const py = 50 + b * 0.95;
+  const hyp = Math.min(1, Math.abs(g) / 30 + Math.abs(b) / 30);
+  document.querySelectorAll(".mcard").forEach((el) => {
+    if (el.classList.contains("manual")) return;
+    el.style.setProperty("--px", px.toFixed(1));
+    el.style.setProperty("--py", py.toFixed(1));
+    el.style.setProperty("--hyp", hyp.toFixed(2));
+    el.style.setProperty("--ry", ((px - 50) * 0.22).toFixed(2) + "deg");
+    el.style.setProperty("--rx", ((50 - py) * 0.26).toFixed(2) + "deg");
+  });
 }

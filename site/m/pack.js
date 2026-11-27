@@ -14,7 +14,8 @@ const TEAR_MAX_Y = 19.5;
 const STRIP_SLICES = matchMedia("(pointer: coarse)").matches ? 8 : 10;
 
 export function mountPack(host, opts = {}) {
-  const { onOpen } = opts;
+  const { onOpen, sfx } = opts;
+  const onRip = (v) => sfx && sfx.call("setRip", v);
 
   host.innerHTML = `
     <div class="packstage">
@@ -22,6 +23,7 @@ export function mountPack(host, opts = {}) {
         <div class="jet-anchor"><svg class="light-jet" id="lightJet" viewBox="0 0 100 76"></svg></div>
         <div class="pack" id="pk">
           <div class="pouch-face front">
+            <img class="pouch-art" src="../img/ui/pack_front.webp" alt="" draggable="false">
             <span class="tear-label">◀ 撕开封条 ⟶</span>
             <i class="tear-guide"></i>
             <span class="lip-shadow"><i class="foil-lip" id="bodyLip"></i></span>
@@ -265,6 +267,7 @@ export function mountPack(host, opts = {}) {
 
   grabZone.addEventListener("pointerdown", (e) => {
     if (drag) return;
+    sfx && sfx.call("grab");
     grabZone.setPointerCapture(e.pointerId);
     drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, p0: st.target, moved: false, locked: false };
   });
@@ -287,6 +290,7 @@ export function mountPack(host, opts = {}) {
     st.target = clamp(drag.p0 + deltaP, st.target, 1);
     const steer = clamp(dy / Math.max(60, Math.abs(dx)), -0.7, 0.7) * (packWidth / packHeight);
     steerRemainingTear(steer, st.p, st.dir);
+    onRip(Math.min(1, st.target * 1.15));
     if (st.target >= 0.995) finishTear();
   };
   grabZone.addEventListener("pointermove", onMove);
@@ -297,7 +301,15 @@ export function mountPack(host, opts = {}) {
     const moved = drag.moved;
     drag = null;
     if (!moved) return;
-    if (st.target > 0.54) finishTear();
+    if (st.target > 0.54) {
+      finishTear();
+    } else {
+      // 没撕到一半：合回去
+      st.target = 0;
+      strips.forEach((seg) => { seg.locked = false; });
+      onRip && onRip(0);
+      setTimeout(() => generateTearLine(), 320);
+    }
   };
   grabZone.addEventListener("pointerup", endDrag);
   grabZone.addEventListener("pointercancel", endDrag);
@@ -309,6 +321,9 @@ export function mountPack(host, opts = {}) {
     opened = true;
     st.target = 1;
     drag = null;
+    onRip(0);
+    sfx && sfx.call("relief");
+    setTimeout(() => sfx && sfx.call("burst", false), 120);
     setTimeout(() => {
       tearFlap.classList.add("visible");
       tearFlap.style.transition = "transform .5s cubic-bezier(.3,.8,.3,1), opacity .5s";

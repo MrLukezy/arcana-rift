@@ -624,3 +624,30 @@ body::after {
 
 .hint { font-size: 11.5px; color: var(--ink-dim); line-height: 1.75; }
 .center { text-align: center; }
+
+/* ───────── 全屏展示卡 ───────── */
+.sheet.full { padding: 0; place-items: stretch; background: rgba(4, 3, 9, 0.92); }
+.sheet.full .sheet-card {
+  width: 100%; height: 100%; max-width: none; max-height: none;
+  border-radius: 0; border: 0; box-shadow: none; background: transparent;
+  padding: 0; display: flex; flex-direction: column; overflow: hidden;
+  animation: none;
+}
+.cv-stage {
+  flex: 1 1 auto; min-height: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px;
+  padding: calc(var(--safe-t) + 14px) 16px 8px;
+  background:
+    radial-gradient(70% 44% at 50% 32%, rgba(126, 84, 200, 0.4), transparent 66%),
+    radial-gradient(60% 40% at 50% 88%, rgba(90, 50, 140, 0.3), transparent 70%);
+}
+.cv-card { width: min(84vw, 360px); }
+.cv-tip { font-size: 11.5px; color: #ff9be0; text-align: center; }
+.cv-actions {
+  flex: 0 0 auto;
+  display: flex; gap: 10px; align-items: center; justify-content: center;
+  padding: 10px 16px calc(14px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, transparent, rgba(6, 4, 12, 0.85) 40%);
+}
+.cv-actions .btn { flex: 1 1 0; max-width: 140px; }

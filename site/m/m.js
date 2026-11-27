@@ -1,8 +1,9 @@
 /* 星界盟约 · 店长（移动端） */
 import { CARD_POOL } from "../src/cards-config.js";
 import { createBattle } from "./battle3.js";
-import { cardHTML, bindHolo } from "./card3d.js";
+import { cardHTML, bindHolo, startTilt, stopTilt } from "./card3d.js";
 import { mountPack } from "./pack.js";
+import { createSoundController } from "./sound.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -375,6 +376,7 @@ function finishTear() {
   save();
 
   setTimeout(() => {
+    sfx.call("cardFlip", res[0] ? (ORDER.indexOf(res[0].card.rarity) + 1) : 1, 0);
     packState.results = res;
     packState.opening = false;
     packState.torn = false;
@@ -384,6 +386,7 @@ function finishTear() {
 }
 
 /* ───────── 对战（三消） ───────── */
+const sfx = createSoundController();
 let packInst = null;
 let fightMode = "setup";
 let battleInst = null;
@@ -536,8 +539,9 @@ function viewTrade() {
 }
 
 /* ───────── 弹层 ───────── */
-function openSheet(html) {
+function openSheet(html, full = false) {
   $("#sheetCard").innerHTML = html;
+  $("#sheet").classList.toggle("full", !!full);
   $("#sheet").hidden = false;
   bindHolo($("#sheetCard"));
 }
@@ -545,20 +549,20 @@ function closeSheet() { $("#sheet").hidden = true; }
 
 function cardSheet(id) {
   const c = byId.get(id);
-  const r = RARITY[c.rarity];
   const el = elementOf(c);
   const price = sellPrice(c);
   const hot = el === S.hot.element;
   openSheet(`
-    <div style="max-width:250px;margin:0 auto 4px">
-      ${cardHTML(c, { lg: true, power: pickPower(id), own: S.bag[id] || 1 })}
+    <div class="cv-stage">
+      <div class="cv-card">${cardHTML(c, { lg: true, power: pickPower(id), own: S.bag[id] || 1 })}</div>
+      ${hot ? `<div class="cv-tip">🔥 今日热门属性 · 回收价 +30%</div>` : ""}
     </div>
-    ${hot ? `<div class="center" style="font-size:11px;color:#ff9be0;margin:6px 0 0">🔥 今日热门属性 · 回收价 +30%</div>` : ""}
-    <div class="sheet-actions" style="justify-content:space-between;margin-top:14px">
-      <button class="btn ghost sm" data-act="close">关闭</button>
-      <button class="btn ghost sm" data-act="shelve">上陈列</button>
+    <div class="cv-actions">
+      <button class="btn ghost" data-act="close">关闭</button>
+      <button class="btn ghost" data-act="shelve">陈列</button>
       <button class="btn" data-act="recycle" data-id="${id}">回收 ${price}◉</button>
-    </div>`);
+    </div>`, true);
+  startTilt();
 }
 
 /* ───────── 渲染 ───────── */
@@ -578,9 +582,10 @@ function render() {
   $("#view").innerHTML = html;
   $$(".tab").forEach((b) => b.classList.toggle("on", b.dataset.tab === tab));
   if (tab === "pack") {
+    if (packState.results.length) startTilt();
     if (packInst) { packInst.destroy(); packInst = null; }
     if (!packState.results.length && $("#packHost")) {
-      packInst = mountPack($("#packHost"), { onOpen: finishTear });
+      packInst = mountPack($("#packHost"), { onOpen: finishTear, sfx });
     }
   }
   bindHolo(document);
