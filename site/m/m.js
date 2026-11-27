@@ -346,10 +346,23 @@ function viewBag() {
 }
 
 /* ───────── 开包 ───────── */
-let packState = { opening: false, results: [], torn: false };
+let packState = { opening: false, results: [], torn: false, phase: "pack" };
 
 function viewPack() {
   syncFree();
+  if (packState.results.length && packState.phase === "reveal") {
+    return `
+    <div class="orbit-stage" id="orbitStage">
+      <div class="orbit-glow"></div>
+      <div class="orbit-ring">
+        ${packState.results.map((r, i) => `
+          <div class="orbit-card" style="--i:${i};--n:${packState.results.length};--d:${i * 90}ms">
+            ${cardHTML(r.card, { power: pickPower(r.card.id) })}
+          </div>`).join("")}
+      </div>
+      <div class="orbit-hint">轻点查看全部</div>
+    </div>`;
+  }
   if (packState.results.length) {
     return `
     <div class="pack-stage">
@@ -397,10 +410,15 @@ function finishTear() {
   setTimeout(() => {
     sfx.call("cardFlip", res[0] ? (ORDER.indexOf(res[0].card.rarity) + 1) : 1, 0);
     packState.results = res;
+    packState.phase = "reveal";
     packState.opening = false;
     packState.torn = false;
     render();
     addXp(12);
+    // 依次点亮每张卡
+    res.forEach((r, i) => setTimeout(() => {
+      sfx.call("cardFlip", ORDER.indexOf(r.card.rarity) + 1, i);
+    }, 260 * (i + 1)));
   }, 460);
 }
 
@@ -650,8 +668,8 @@ document.addEventListener("click", (e) => {
   if (t.id === "goPack") { tab = "pack"; render(); return; }
   if (t.id === "goTasks") { openSheet(viewTasks() + `<div class="sheet-actions"><button class="btn ghost" data-act="close">关闭</button></div>`); return; }
   if (t.id === "goMail") { openMail(); return; }
-  if (t.id === "packAgain") { packState.results = []; render(); return; }
-  if (t.id === "packDone") { packState.results = []; tab = "home"; render(); return; }
+  if (t.id === "packAgain") { packState.results = []; packState.phase = "pack"; render(); return; }
+  if (t.id === "packDone") { packState.results = []; packState.phase = "pack"; tab = "home"; render(); return; }
   if (t.id === "buyPack") {
     if (S.coins < 180) return toast("金币不够");
     S.coins -= 180; packState.paid = true; save(); paintTop();
@@ -665,6 +683,12 @@ document.addEventListener("click", (e) => {
 
   const f = t.closest("[data-f]");
   if (f) { bagFilter = f.dataset.f; render(); return; }
+
+  if (t.closest("#orbitStage")) {
+    packState.phase = "grid";
+    render();
+    return;
+  }
 
   const resCard = t.closest("[data-res]");
   if (resCard) {

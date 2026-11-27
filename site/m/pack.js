@@ -24,6 +24,7 @@ export function mountPack(host, opts = {}) {
         <div class="pack" id="pk">
           <div class="pouch-face front">
             <img class="pouch-art" src="../img/ui/pack_front.webp" alt="" draggable="false">
+            <i class="pouch-shine"></i>
             <span class="tear-label">◀ 撕开封条 ⟶</span>
             <i class="tear-guide"></i>
             <span class="lip-shadow"><i class="foil-lip" id="bodyLip"></i></span>
@@ -47,6 +48,7 @@ export function mountPack(host, opts = {}) {
               <b class="brand-mark">星界盟约</b>
             </div>
           </div>
+          <i class="tear-glow" id="tearGlow"></i>
           <div class="tear-flap" id="tearFlap"></div>
           <button class="grab-zone" id="grabZone" type="button" aria-label="撕开卡包"></button>
         </div>
@@ -56,6 +58,7 @@ export function mountPack(host, opts = {}) {
   const pk = host.querySelector("#pk");
   const tearFlap = host.querySelector("#tearFlap");
   const bodyLip = host.querySelector("#bodyLip");
+  const tearGlow = host.querySelector("#tearGlow");
   const grabZone = host.querySelector("#grabZone");
   const lightJet = host.querySelector("#lightJet");
   const faces = [host.querySelector(".pouch-face.front"), host.querySelector(".pouch-face.back")];
@@ -166,7 +169,12 @@ export function mountPack(host, opts = {}) {
       : [[0, 0], [tipX, 0], [tipX, tipY], ...tornPart, [100, 100], [0, 100]];
     faces[0].style.clipPath = polyFromPoints(bodyPoly);
     faces[1].style.clipPath = polyFromPoints(mirrorPointsX(bodyPoly));
-    bodyLip.style.clipPath = polyFromPoints(buildLipBand(d > 0 ? [...tornPart, tipVert] : [tipVert, ...tornPart], 1));
+    const lipBand = buildLipBand(d > 0 ? [...tornPart, tipVert] : [tipVert, ...tornPart], 1.6);
+    bodyLip.style.clipPath = polyFromPoints(lipBand);
+    if (tearGlow) {
+      tearGlow.style.clipPath = polyFromPoints(lipBand);
+      tearGlow.style.opacity = Math.min(0.95, p * 3.2).toFixed(2);
+    }
 
     tearFlap.style.transformOrigin = `${tipX}% ${tipY}%`;
     const sliceW = 100 / STRIP_SLICES;
@@ -330,6 +338,18 @@ export function mountPack(host, opts = {}) {
       tearFlap.style.transform = `translateY(-38%) rotateZ(${st.dir * 14}deg) rotateX(-28deg)`;
       tearFlap.style.opacity = "0";
       playJet();
+      const flash = host.querySelector("#tearGlow");
+      if (flash) {
+        flash.style.transition = "none";
+        flash.style.clipPath = "none";
+        flash.style.opacity = "1";
+        flash.style.filter = "blur(16px) brightness(2.2)";
+        requestAnimationFrame(() => {
+          flash.style.transition = "opacity .55s, filter .55s";
+          flash.style.opacity = "0";
+          flash.style.filter = "blur(30px) brightness(3)";
+        });
+      }
       pk.classList.add("opened");
       setTimeout(() => onOpen && onOpen(), 1150);
     }, 130);

@@ -412,3 +412,36 @@ box-shadow: 0 10px 30px rgba(108,78,190,.18), inset 0 1px 0 #fff;
 ### 导航图标
 
 原来的深紫图标在白底上糊成一坨，重新生成了一套**白描边 + 鎏金**的浅色图标。
+
+## 第十一轮：转圈展示 + 卡包流光 + 撕裂金光
+
+### 卡片转圈展示
+
+撕开后不再直接甩出网格，先进入 `#orbitStage`：
+
+- 5 张卡按 `rotateY(i * 360/n) translateZ(152px)` 摆成一个 3D 圆环
+- 圆环整体 `ringSpin 20s` 匀速自转，卡片 `backface-visibility: hidden`，转到背面自动消失
+- 背后一团金色光晕 `orbitPulse` 呼吸
+- 每张卡 `cardIn` 依次弹入（0.5s 弹性缓动，错峰 90ms）
+- 轻点任意处 → 切到网格总览
+
+### 卡包 shader
+
+`.pouch-shine` 叠在卡包插画上，两层图案混合：
+
+```css
+background:
+  linear-gradient(114deg, transparent 32%, rgba(255,255,255,.62) 45%, ...),   /* 金属高光带 */
+  conic-gradient(from 0deg at 46% 40%, 粉, 青, 金, 紫, 粉);                    /* 虹彩 */
+background-size: 300% 100%, 200% 200%;
+mix-blend-mode: screen;
+animation: pouchSheen 7s ease-in-out infinite;
+```
+
+高光带从左扫到右，虹彩同时缓慢旋转 —— 像真的镀铝膜在灯下反光。
+
+### 撕裂金光
+
+新增 `.tear-glow`：一段跟着撕裂线走的金色光带，`clip-path` 用和袋口唇边同一个多边形
+（`buildLipBand`，外扩 1.6 倍），`blur(3px) brightness(1.5)` + `mix-blend-mode: screen`，
+透明度跟撕开进度联动（`p * 3.2`）。撕开瞬间爆闪一次白光。

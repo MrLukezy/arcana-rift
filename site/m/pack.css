@@ -613,3 +613,37 @@
   z-index: 3;
   box-shadow: 0 0 8px rgba(255, 220, 150, .6);
 }
+
+/* 卡包表面流光（金属膜 + 虹彩） */
+.pouch-shine {
+  position: absolute; inset: 0; z-index: 2;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(114deg, transparent 32%, rgba(255,255,255,0.62) 45%,
+      rgba(255,244,214,0.4) 53%, transparent 68%),
+    conic-gradient(from 0deg at 46% 40%,
+      rgba(255,110,210,0.2), rgba(120,215,255,0.2), rgba(255,228,140,0.2),
+      rgba(160,140,255,0.2), rgba(255,110,210,0.2));
+  background-size: 300% 100%, 200% 200%;
+  background-position: -160% 0, 0% 0%;
+  mix-blend-mode: screen;
+  animation: pouchSheen 7s ease-in-out infinite;
+  opacity: 0.9;
+}
+@keyframes pouchSheen {
+  0%   { background-position: -160% 0, 0% 0%; }
+  55%  { background-position: 170% 0, 100% 100%; }
+  100% { background-position: 170% 0, 100% 100%; }
+}
+
+/* 撕裂口的金光 */
+.tear-glow {
+  position: absolute; inset: 0; z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(96deg, #fffbe8 0%, #ffe9a8 42%, #fff8e0 70%, #ffd873 100%);
+  filter: blur(3px) brightness(1.5);
+  mix-blend-mode: screen;
+  transition: opacity 0.12s;
+}
