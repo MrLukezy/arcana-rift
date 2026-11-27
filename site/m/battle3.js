@@ -96,29 +96,25 @@ export function createBattle(opts) {
   }
 
   function mount() {
+    const heroCard = (deck.find((d) => d.card.kind === "char") || deck[0]).card;
     host.innerHTML = `
       <div class="m3-scene">
-        <div class="m3-foe" id="m3Foe">
-          <div class="m3-portrait"><img src="${enemy.art}" alt="${enemy.name}"></div>
-          <div class="m3-foe-main">
-            <div class="m3-foe-name">${enemy.name}</div>
-            <div class="hpbar foe"><i></i><span></span></div>
-          </div>
-        </div>
-        <div class="m3-vs">⚔</div>
-        <div class="m3-party" id="m3Party">
-          <div class="m3-cards">
-            ${deck.map((d) => `<div class="m3-pcard" style="--e:${(GEMS.find((x) => x.name === d.element) || {}).color || "#fff"}">
-              <img src="../${d.card.fullArtImage}" alt="${d.card.name}">
-              <i>${d.element}</i></div>`).join("")}
-          </div>
+        <div class="m3-side hero" id="m3Hero">
+          <div class="m3-portrait"><img src="../${heroCard.artChar}" alt="${heroCard.name}" draggable="false"></div>
+          <div class="m3-name">${heroCard.name}</div>
           <div class="hpbar me"><i></i><span></span></div>
+        </div>
+        <div class="m3-clash">⚔</div>
+        <div class="m3-side foe" id="m3Foe">
+          <div class="m3-portrait"><img src="${enemy.artChar}" alt="${enemy.name}" draggable="false"></div>
+          <div class="m3-name foe">${enemy.name}</div>
+          <div class="hpbar foe"><i></i><span></span></div>
         </div>
       </div>
       <div class="m3-boardwrap">
         <div class="m3-board"><div class="m3-layer" id="m3Layer"></div></div>
       </div>
-      <div class="m3-hint" id="m3Hint">拖动宝石交换，三个同色即可攻击</div>`;
+      <div class="m3-hint" id="m3Hint">拖动宝石交换，三个同色即可施放元素攻击</div>`;
 
     el.layer = host.querySelector("#m3Layer");
     for (let r = 0; r < ROWS; r++) {
@@ -136,6 +132,30 @@ export function createBattle(opts) {
     }
     paintHud();
     bindInput();
+  }
+
+  /* ── 施法：从角色飞向敌人 ── */
+  function fly(color, toFoe = true) {
+    const fromEl = host.querySelector(toFoe ? ".m3-side.hero .m3-portrait" : ".m3-side.foe .m3-portrait");
+    const toEl = host.querySelector(toFoe ? ".m3-side.foe .m3-portrait" : ".m3-side.hero .m3-portrait");
+    if (!fromEl || !toEl) return;
+    const a = fromEl.getBoundingClientRect();
+    const b = toEl.getBoundingClientRect();
+    const bolt = document.createElement("i");
+    bolt.className = "m3-bolt";
+    bolt.style.setProperty("--c", color);
+    bolt.style.left = (a.left + a.width / 2) + "px";
+    bolt.style.top = (a.top + a.height / 2) + "px";
+    host.appendChild(bolt);
+    requestAnimationFrame(() => {
+      bolt.style.transform = `translate(${b.left + b.width / 2 - (a.left + a.width / 2)}px, ${b.top + b.height / 2 - (a.top + a.height / 2)}px) scale(.4)`;
+      bolt.style.opacity = "0.2";
+    });
+    setTimeout(() => {
+      bolt.remove();
+      const tgt = host.querySelector(toFoe ? ".m3-side.foe" : ".m3-side.hero");
+      if (tgt) shake(tgt);
+    }, 300);
   }
 
   function place(node, r, c, instant) {
@@ -275,13 +295,16 @@ export function createBattle(opts) {
       }
 
       let dmg = 0;
+      let mainGem = GEMS[0], mainN = 0;
       for (const [g, n] of Object.entries(per)) {
         const gem = GEMS[+g];
         const bonus = affinity[gem.name] ? 2 : 1;
         dmg += n * bonus;
+        if (n > mainN) { mainN = n; mainGem = gem; }
         if (affinity[gem.name]) float(`${gem.name}共鸣 +${n * 2}`, "crit");
       }
       dmg = Math.round(dmg * (1 + 0.3 * (st.combo - 1)));
+      fly(mainGem.color, true);
 
       for (const idx of cells) {
         const t = st.grid[(idx / COLS) | 0][idx % COLS];
@@ -362,6 +385,7 @@ export function createBattle(opts) {
 
   async function enemyTurn() {
     const dmg = enemy.atk + rnd(6);
+    fly("#ff6b6b", false);
     st.playerHp -= dmg;
     paintHud();
     float(`-${dmg}`, "hurt");

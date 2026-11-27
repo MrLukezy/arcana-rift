@@ -400,6 +400,7 @@ function makeEnemy() {
     card: c,
     name: c.name,
     art: `../${c.fullArtImage}`,
+    artChar: `../${c.artChar}`,
     hp: 110 + r.power * 3 + Math.floor(Math.random() * 40),
     atk: 6 + Math.round(r.power / 3),
   };
